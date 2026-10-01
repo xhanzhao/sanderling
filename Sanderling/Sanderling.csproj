@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      Rhino 8 (Windows) supports two runtimes:
+        net7.0-windows  -> Rhino 8's default .NET Core runtime (also loads under the .NET 8 runtime)
+        net48           -> .NET Framework, used when Rhino 8 is started with /netfx
+      Sanderling uses Win32 input APIs and therefore supports Windows only.
+    -->
+    <TargetFrameworks>net7.0-windows;net48</TargetFrameworks>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <TargetExt>.rhp</TargetExt>
+    <RootNamespace>Sanderling</RootNamespace>
+    <AssemblyName>Sanderling</AssemblyName>
+    <NoWarn>NU1701;NETSDK1138</NoWarn>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Assembly / Yak package information -->
+    <Version>0.1.0</Version>
+    <Title>Sanderling</Title>
+    <Product>Sanderling</Product>
+    <Company></Company>
+    <Description>Sanderling - real-time game-like viewport navigation for Rhino.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ExcludeAssets="runtime": RhinoCommon.dll is provided by Rhino and is not copied to the output folder -->
+    <PackageReference Include="RhinoCommon" Version="8.0.23304.9001" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="$(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4'))">
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+</Project>
