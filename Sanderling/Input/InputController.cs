@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Sanderling.Input.Native;
 using Sanderling.Navigation;
@@ -39,6 +40,9 @@ namespace Sanderling.Input
         public bool ToggleMode;
         public bool ToggleCollision;
         public bool SaveView;
+
+        /// <summary>The user clicked Rhino's UI outside the viewport (toolbar, panel, menu, command line): end navigation.</summary>
+        public bool ClickedOutside;
     }
 
     /// <summary>
@@ -68,6 +72,16 @@ namespace Sanderling.Input
         private int _wheelAccumulator;      // wheel without Alt -> speed
         private int _lensWheelAccumulator;  // Alt + wheel -> lens
         private bool _escapeFromHook;
+
+        // Click outside the viewport -> end navigation, then replay the click so it works as usual.
+        // The click is held back completely while navigation is still running: menus, title-bar drags and
+        // panel actions would otherwise start inside the running Sanderling command (menus even block the
+        // navigation loop until they close).
+        private bool _clickedOutside;
+        private int _clickButton;           // 0 none, 1 left, 2 right, 3 middle, 4 X1, 5 X2
+        private Win32.POINT _clickPoint;    // screen position of the click
+        private bool _clickReleased;        // the button was released before navigation had ended
+        private bool _stopIntercepting;     // set on Dispose so a late hook call never swallows anything
         private bool _disposed;
 
         public InputController(IntPtr viewHandle)
@@ -120,6 +134,7 @@ namespace Sanderling.Input
             frame.ToggleMode = _keyboard.ToggleModePressed;
             frame.ToggleCollision = _keyboard.ToggleCollisionPressed;
             frame.SaveView = _keyboard.SaveViewPressed;
+            frame.ClickedOutside = _clickedOutside;
 
             // Wheel: 120 units per notch; the fractional remainder of high-resolution wheels carries over to the next frame
             if (focus)
@@ -291,7 +306,7 @@ namespace Sanderling.Input
         {
             try
             {
-                if ((nCode == Win32.HC_ACTION || nCode == Win32.HC_NOREMOVE) && _viewRectValid)
+                if ((nCode == Win32.HC_ACTION || nCode == Win32.HC_NOREMOVE) && _viewRectValid && !_stopIntercepting)
                 {
                     int msg = wParam.ToInt32();
 
@@ -299,18 +314,45 @@ namespace Sanderling.Input
                     // the WH_GETMESSAGE hook never sees them and the speed cannot change.
                     // They are read and neutralized in GetMessageHookProc instead.
                     bool isWheel = msg == Win32.WM_MOUSEWHEEL || msg == Win32.WM_MOUSEHWHEEL;
+                    bool isClient = msg >= Win32.WM_MOUSEFIRST && msg <= Win32.WM_MOUSELAST;
+                    bool isNonClient = msg >= Win32.WM_NCLBUTTONDOWN && msg <= Win32.WM_NCXBUTTONDBLCLK;
 
-                    if (!isWheel && msg >= Win32.WM_MOUSEFIRST && msg <= Win32.WM_MOUSELAST)
+                    if (!isWheel && (isClient || isNonClient))
                     {
                         Win32.MOUSEHOOKSTRUCTEX data =
                             (Win32.MOUSEHOOKSTRUCTEX)Marshal.PtrToStructure(lParam, typeof(Win32.MOUSEHOOKSTRUCTEX));
+
+                        bool viewTarget = isClient && IsViewTarget(data.hwnd, data.pt.X, data.pt.Y);
+                        int down = ButtonDown(msg, data.mouseData);
+                        int up = ButtonUp(msg, data.mouseData);
+
+                        // A click outside the viewport has been held back and navigation is about to end:
+                        // hold back all further mouse input until it has; the click is replayed afterwards.
+                        if (_clickedOutside)
+                        {
+                            if (up != 0 && up == _clickButton) _clickReleased = true;
+                            return new IntPtr(1);
+                        }
+
+                        // ---- Rule: a click on Rhino's UI outside the viewport ends navigation ----
+                        // Applies to toolbars, panels, the menu bar, the title bar, the command line and other
+                        // viewports alike. Clicks in a modal dialog (main window disabled) never end navigation;
+                        // navigation only pauses while such a dialog is open.
+                        if (down != 0 && !viewTarget && !IsModalDialogOpen())
+                        {
+                            _clickedOutside = true;
+                            _clickButton = down;
+                            _clickPoint = data.pt;
+                            _clickReleased = false;
+                            return new IntPtr(1);
+                        }
 
                         if (!IsNavigationForeground)
                         {
                             // A dialog or floating panel is active: release the cursor and let the mouse work normally
                             YieldToOtherWindow();
                         }
-                        else if (IsViewTarget(data.hwnd, data.pt.X, data.pt.Y))
+                        else if (viewTarget)
                         {
                             // Swallow mouse messages that target the navigation view itself:
                             // RMB no longer rotates, LMB no longer selects objects.
@@ -326,6 +368,138 @@ namespace Sanderling.Input
                 // Ignore
             }
             return Win32.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
+        }
+
+        /// <summary>True while a modal dialog is open (it disables the window that owns it).</summary>
+        private bool IsModalDialogOpen()
+        {
+            if (_rootHandle != IntPtr.Zero && !Win32.IsWindowEnabled(_rootHandle)) return true;
+            IntPtr main = Rhino.RhinoApp.MainWindowHandle();
+            return main != IntPtr.Zero && !Win32.IsWindowEnabled(main);
+        }
+
+        /// <summary>Button pressed by a mouse message: 0 none, 1 left, 2 right, 3 middle, 4 X1, 5 X2.</summary>
+        private static int ButtonDown(int msg, uint mouseData)
+        {
+            switch (msg)
+            {
+                case Win32.WM_LBUTTONDOWN:
+                case Win32.WM_LBUTTONDBLCLK:
+                case Win32.WM_NCLBUTTONDOWN:
+                case Win32.WM_NCLBUTTONDBLCLK:
+                    return 1;
+                case Win32.WM_RBUTTONDOWN:
+                case Win32.WM_RBUTTONDBLCLK:
+                case Win32.WM_NCRBUTTONDOWN:
+                case Win32.WM_NCRBUTTONDBLCLK:
+                    return 2;
+                case Win32.WM_MBUTTONDOWN:
+                case Win32.WM_MBUTTONDBLCLK:
+                case Win32.WM_NCMBUTTONDOWN:
+                case Win32.WM_NCMBUTTONDBLCLK:
+                    return 3;
+                case Win32.WM_XBUTTONDOWN:
+                case Win32.WM_XBUTTONDBLCLK:
+                case Win32.WM_NCXBUTTONDOWN:
+                case Win32.WM_NCXBUTTONDBLCLK:
+                    return XButton(mouseData);
+                default:
+                    return 0;
+            }
+        }
+
+        /// <summary>Button released by a mouse message: 0 none, 1 left, 2 right, 3 middle, 4 X1, 5 X2.</summary>
+        private static int ButtonUp(int msg, uint mouseData)
+        {
+            switch (msg)
+            {
+                case Win32.WM_LBUTTONUP:
+                case Win32.WM_NCLBUTTONUP:
+                    return 1;
+                case Win32.WM_RBUTTONUP:
+                case Win32.WM_NCRBUTTONUP:
+                    return 2;
+                case Win32.WM_MBUTTONUP:
+                case Win32.WM_NCMBUTTONUP:
+                    return 3;
+                case Win32.WM_XBUTTONUP:
+                case Win32.WM_NCXBUTTONUP:
+                    return XButton(mouseData);
+                default:
+                    return 0;
+            }
+        }
+
+        private static int XButton(uint mouseData)
+        {
+            int which = (int)((mouseData >> 16) & 0xFFFF);
+            return which == Win32.XBUTTON2 ? 5 : 4;
+        }
+
+        /// <summary>
+        /// Replays the click outside the viewport that ended navigation: moves the cursor back to where the user
+        /// clicked, presses the button and, if it was already released, releases it again.
+        /// Call after Dispose (hooks removed). The synthetic input is processed once the Sanderling command has
+        /// returned, so the menu bar, toolbar button or panel reacts exactly as to a normal click.
+        /// If the user is still holding the button, only the press is replayed and the real release follows.
+        /// </summary>
+        public void ReplayOutsideClick()
+        {
+            int button = _clickButton;
+            _clickButton = 0;
+            if (!_clickedOutside || button == 0) return;
+
+            uint downFlag, upFlag, data = 0;
+            switch (button)
+            {
+                case 1: downFlag = Win32.MOUSEEVENTF_LEFTDOWN; upFlag = Win32.MOUSEEVENTF_LEFTUP; break;
+                case 2: downFlag = Win32.MOUSEEVENTF_RIGHTDOWN; upFlag = Win32.MOUSEEVENTF_RIGHTUP; break;
+                case 3: downFlag = Win32.MOUSEEVENTF_MIDDLEDOWN; upFlag = Win32.MOUSEEVENTF_MIDDLEUP; break;
+                case 4: downFlag = Win32.MOUSEEVENTF_XDOWN; upFlag = Win32.MOUSEEVENTF_XUP; data = Win32.XBUTTON1; break;
+                case 5: downFlag = Win32.MOUSEEVENTF_XDOWN; upFlag = Win32.MOUSEEVENTF_XUP; data = Win32.XBUTTON2; break;
+                default: return;
+            }
+
+            List<Win32.INPUT> inputs = new List<Win32.INPUT>(3);
+
+            // Move back to the click position (absolute coordinates normalized to the virtual desktop)
+            int vx = Win32.GetSystemMetrics(Win32.SM_XVIRTUALSCREEN);
+            int vy = Win32.GetSystemMetrics(Win32.SM_YVIRTUALSCREEN);
+            int vw = Win32.GetSystemMetrics(Win32.SM_CXVIRTUALSCREEN);
+            int vh = Win32.GetSystemMetrics(Win32.SM_CYVIRTUALSCREEN);
+            if (vw > 1 && vh > 1)
+            {
+                Win32.INPUT move = new Win32.INPUT();
+                move.type = Win32.INPUT_MOUSE;
+                move.mi.dx = (int)Math.Round((_clickPoint.X - vx) * 65535.0 / (vw - 1));
+                move.mi.dy = (int)Math.Round((_clickPoint.Y - vy) * 65535.0 / (vh - 1));
+                move.mi.dwFlags = Win32.MOUSEEVENTF_MOVE | Win32.MOUSEEVENTF_ABSOLUTE | Win32.MOUSEEVENTF_VIRTUALDESK;
+                inputs.Add(move);
+            }
+
+            Win32.INPUT press = new Win32.INPUT();
+            press.type = Win32.INPUT_MOUSE;
+            press.mi.dwFlags = downFlag;
+            press.mi.mouseData = data;
+            inputs.Add(press);
+
+            if (_clickReleased)
+            {
+                Win32.INPUT release = new Win32.INPUT();
+                release.type = Win32.INPUT_MOUSE;
+                release.mi.dwFlags = upFlag;
+                release.mi.mouseData = data;
+                inputs.Add(release);
+            }
+
+            try
+            {
+                Win32.SendInput((uint)inputs.Count, inputs.ToArray(), Marshal.SizeOf(typeof(Win32.INPUT)));
+            }
+            catch
+            {
+                // Worst case the click has to be repeated
+            }
         }
 
         /// <summary>
@@ -392,6 +566,7 @@ namespace Sanderling.Input
         {
             if (_disposed) return;
             _disposed = true;
+            _stopIntercepting = true;
 
             RemoveHooks();
             _mouse.Release();

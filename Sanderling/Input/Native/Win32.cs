@@ -23,6 +23,37 @@ namespace Sanderling.Input.Native
         public const int WM_MOUSEWHEEL = 0x020A;
         public const int WM_MOUSEHWHEEL = 0x020E;
         public const int WM_MOUSELAST = 0x020E;
+
+        // Client-area button messages
+        public const int WM_LBUTTONDOWN = 0x0201;
+        public const int WM_LBUTTONUP = 0x0202;
+        public const int WM_LBUTTONDBLCLK = 0x0203;
+        public const int WM_RBUTTONDOWN = 0x0204;
+        public const int WM_RBUTTONUP = 0x0205;
+        public const int WM_RBUTTONDBLCLK = 0x0206;
+        public const int WM_MBUTTONDOWN = 0x0207;
+        public const int WM_MBUTTONUP = 0x0208;
+        public const int WM_MBUTTONDBLCLK = 0x0209;
+        public const int WM_XBUTTONDOWN = 0x020B;
+        public const int WM_XBUTTONUP = 0x020C;
+        public const int WM_XBUTTONDBLCLK = 0x020D;
+
+        // Non-client button messages (title bar, menu bar, window borders)
+        public const int WM_NCLBUTTONDOWN = 0x00A1;
+        public const int WM_NCLBUTTONUP = 0x00A2;
+        public const int WM_NCLBUTTONDBLCLK = 0x00A3;
+        public const int WM_NCRBUTTONDOWN = 0x00A4;
+        public const int WM_NCRBUTTONUP = 0x00A5;
+        public const int WM_NCRBUTTONDBLCLK = 0x00A6;
+        public const int WM_NCMBUTTONDOWN = 0x00A7;
+        public const int WM_NCMBUTTONUP = 0x00A8;
+        public const int WM_NCMBUTTONDBLCLK = 0x00A9;
+        public const int WM_NCXBUTTONDOWN = 0x00AB;
+        public const int WM_NCXBUTTONUP = 0x00AC;
+        public const int WM_NCXBUTTONDBLCLK = 0x00AD;
+
+        public const int XBUTTON1 = 0x0001;
+        public const int XBUTTON2 = 0x0002;
         public const int WHEEL_DELTA = 120;
 
         // ---- Virtual key codes ----
@@ -153,6 +184,55 @@ namespace Sanderling.Input.Native
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsChild(IntPtr hWndParent, IntPtr hWnd);
+
+        /// <summary>A window is disabled while a modal dialog it owns is open.</summary>
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsWindowEnabled(IntPtr hWnd);
+
+        // ---- Synthetic input (used to replay a click outside the viewport after navigation has ended) ----
+        public const uint INPUT_MOUSE = 0;
+        public const uint MOUSEEVENTF_MOVE = 0x0001;
+        public const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
+        public const uint MOUSEEVENTF_LEFTUP = 0x0004;
+        public const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
+        public const uint MOUSEEVENTF_RIGHTUP = 0x0010;
+        public const uint MOUSEEVENTF_MIDDLEDOWN = 0x0020;
+        public const uint MOUSEEVENTF_MIDDLEUP = 0x0040;
+        public const uint MOUSEEVENTF_XDOWN = 0x0080;
+        public const uint MOUSEEVENTF_XUP = 0x0100;
+        public const uint MOUSEEVENTF_VIRTUALDESK = 0x4000;
+        public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
+
+        public const int SM_XVIRTUALSCREEN = 76;
+        public const int SM_YVIRTUALSCREEN = 77;
+        public const int SM_CXVIRTUALSCREEN = 78;
+        public const int SM_CYVIRTUALSCREEN = 79;
+
+        [DllImport("user32.dll")]
+        public static extern int GetSystemMetrics(int nIndex);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MOUSEINPUT
+        {
+            public int dx;
+            public int dy;
+            public uint mouseData;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+        /// <summary>INPUT with the mouse member only (MOUSEINPUT is the largest member of the union).</summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct INPUT
+        {
+            public uint type;
+            public MOUSEINPUT mi;
+        }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 
         [DllImport("user32.dll")]
         public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);

@@ -126,7 +126,9 @@ Lens length comes from the Rhino viewport itself: Sanderling uses the viewport's
 After exiting, the viewport stays where navigation ended. Run `UndoView` to return to the view from before navigation.
 While navigating, all key presses are swallowed (nothing reaches the command line), and mouse clicks and wheel input inside the viewport do not trigger Rhino's normal behavior.
 Switching to another application (Alt+Tab) pauses navigation and releases the cursor; navigation resumes automatically when you return to Rhino.
-The same happens when a Rhino dialog or floating panel becomes active during navigation (for example Named Views > Save As): navigation pauses, the dialog receives keyboard and mouse input normally, and navigation resumes when the dialog closes. Clicks on docked panels and toolbars outside the viewport are passed to Rhino; if they start another command, navigation ends.
+**Clicking outside the viewport ends navigation.** A click on any part of Rhino's interface outside the navigation viewport (toolbars, panels, menus, the command line, other viewports) ends navigation, and the click then works as usual: a toolbar button starts its command (e.g. Box), a panel action runs, a right-click menu opens. This applies to every command in the same way, whether Rhino could run it inside another command or not. Technically the click is held back, navigation ends, and the click is then replayed at the same position, so menus, title-bar drags and panel actions all happen after navigation has ended.
+
+Dialogs that open on their own during navigation (e.g. an autosave message) are the exception: navigation pauses, the dialog receives keyboard and mouse input normally, and navigation resumes when the dialog closes.
 
 ## 6. Walk Mode Rules
 
@@ -220,6 +222,7 @@ These parameters and the speed levels persist across Rhino restarts. Mode (F), l
 - [ ] **Unit consistency:** the same speed level produces the same real-world speed in mm, m, inch and foot models.
 - [ ] **Enter / exit:** after repeatedly entering and exiting, Alt+Tab, closing the view and closing the document, Rhino always returns to normal.
 - [ ] **Restore:** after exiting, Rhino's view rotation, selection and command input work normally; `UndoView` returns to the pre-navigation view.
+- [ ] **Click outside:** clicking a toolbar button (e.g. Box) during navigation ends navigation and starts the command, also with a very quick click; the menu bar opens its menu and menu items work; dragging the title bar moves the window; right-clicking a layer opens its menu; clicking inside the viewport never ends navigation.
 - [ ] **Save view:** V adds a `Sanderling View ...` entry to the Named Views panel without leaving navigation; restoring it shows the same camera and lens.
 
 ### V2 — Walk

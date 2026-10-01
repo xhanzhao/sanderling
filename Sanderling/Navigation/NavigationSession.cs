@@ -146,6 +146,7 @@ namespace Sanderling.Navigation
             {
                 // ---- Cleanup that must always run ----
                 input.Dispose();          // Remove hooks, release and show the cursor
+                input.ReplayOutsideClick();   // a click outside the viewport now does what it normally does
                 hud.Enabled = false;
                 UnsubscribeEvents();
 
@@ -191,6 +192,11 @@ namespace Sanderling.Navigation
                 if (dt > MaxDeltaTime) dt = MaxDeltaTime;
 
                 InputFrame frame = input.Update(state.LookMode);
+                if (frame.ClickedOutside)
+                {
+                    RequestExit("Clicked outside the viewport.");
+                    break;
+                }
                 if (frame.ExitRequested) break;
 
                 if (frame.ToggleHud)
