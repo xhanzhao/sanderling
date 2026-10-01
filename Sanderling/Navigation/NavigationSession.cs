@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading;
 using Sanderling.Display;
 using Sanderling.Input;
@@ -20,7 +21,9 @@ namespace Sanderling.Navigation
     /// </summary>
     internal sealed class NavigationSession
     {
-        private const double MaxDeltaTime = 0.1; // Compensate at most 0.1 s after a stall to avoid "teleporting"
+        private const double MaxDeltaTime = 0.1;
+        private const double FlashDuration = 2.5;     // seconds a HUD message stays visible
+        private const string SavedViewPrefix = "Sanderling View "; // Compensate at most 0.1 s after a stall to avoid "teleporting"
 
         private static NavigationSession _current;
 
@@ -34,6 +37,8 @@ namespace Sanderling.Navigation
         private WalkNavigationController _walk;
 
         private InputController _input;
+        private Guid _viewportId;
+        private double _flashUntil;
         private bool _exitRequested;
         private bool _viewDestroyed;
         private string _exitReason;
@@ -111,6 +116,7 @@ namespace Sanderling.Navigation
             NavigationHUD hud = new NavigationHUD(state, settings, viewport.Id);
             InputController input = new InputController(_view.Handle);
             _input = input;
+            _viewportId = viewport.Id;
 
             Result result = Result.Success;
             SubscribeEvents();
@@ -216,6 +222,18 @@ namespace Sanderling.Navigation
                     RhinoApp.WriteLine((state.CollisionEnabled ? "Sanderling: Collision on" : "Sanderling: Collision off") + suffix);
                 }
 
+                if (frame.SaveView)
+                {
+                    SaveNamedView(state, clock.Elapsed.TotalSeconds);
+                }
+
+                // Hide the HUD message once it has been visible long enough
+                if (state.FlashMessage != null && clock.Elapsed.TotalSeconds > _flashUntil)
+                {
+                    state.FlashMessage = null;
+                    state.HudDirty = true;
+                }
+
                 if (frame.ToggleLookMode)
                 {
                     state.LookMode = state.LookMode == LookMode.Drag ? LookMode.Free : LookMode.Drag;
@@ -261,6 +279,57 @@ namespace Sanderling.Navigation
             if (sleepMs > 0) Thread.Sleep(sleepMs);
         }
 
+        /// <summary>
+        /// Saves the current camera of the navigation viewport (position, direction, lens) as a named view,
+        /// named "Sanderling View yyyy-MM-dd HH-mm-ss". Saving more than once in the same second appends (2), (3), ...
+        /// Rhino does not accept ':' in named view names, so the time uses '-' as well.
+        /// </summary>
+        private void SaveNamedView(NavigationState state, double now)
+        {
+            string name = TryAddNamedView(SavedViewPrefix + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss", CultureInfo.InvariantCulture));
+
+            if (name != null)
+            {
+                RhinoApp.WriteLine("Sanderling: Saved named view \"{0}\".", name);
+                state.FlashMessage = "VIEW SAVED  " + name;
+            }
+            else
+            {
+                RhinoApp.WriteLine("Sanderling: Failed to save the view.");
+                state.FlashMessage = "VIEW NOT SAVED";
+            }
+
+            _flashUntil = now + FlashDuration;
+            state.HudDirty = true;
+        }
+
+        /// <summary>
+        /// Adds a named view from the navigation viewport, appending (2), (3), ... if the name already exists.
+        /// Returns the name actually used, or null if Rhino did not add the view.
+        /// </summary>
+        private string TryAddNamedView(string baseName)
+        {
+            string name = baseName;
+            int suffix = 2;
+            while (_doc.NamedViews.FindByName(name) >= 0)
+            {
+                name = baseName + " (" + suffix.ToString(CultureInfo.InvariantCulture) + ")";
+                suffix++;
+            }
+
+            try
+            {
+                int index = _doc.NamedViews.Add(name, _viewportId);
+                // Double-check that the view really exists under this name
+                if (index >= 0 && _doc.NamedViews.FindByName(name) >= 0) return name;
+            }
+            catch (Exception)
+            {
+                // Treated as not saved
+            }
+            return null;
+        }
+
         private NavigationController ControllerFor(NavigationMode mode)
         {
             return mode == NavigationMode.Walk ? (NavigationController)_walk : _fly;
@@ -268,7 +337,7 @@ namespace Sanderling.Navigation
 
         private void PrintHelp(NavigationSettings settings, NavigationMode mode)
         {
-            RhinoApp.WriteLine("Sanderling navigation started ({0} mode) - WASD Move | Q/E Up/Down (Fly) | Shift Boost | Ctrl Precision | Wheel Speed | Alt+Wheel Lens | F Fly/Walk | C Collision (Walk) | Tab Look mode | H HUD | Esc Exit",
+            RhinoApp.WriteLine("Sanderling navigation started ({0} mode) - WASD Move | Q/E Up/Down (Fly) | Shift Boost | Ctrl Precision | Wheel Speed | Alt+Wheel Lens | F Fly/Walk | C Collision (Walk) | V Save view | Tab Look mode | H HUD | Esc Exit",
                                mode == NavigationMode.Walk ? "Walk" : "Fly");
             if (settings.LookMode == LookMode.Drag)
             {

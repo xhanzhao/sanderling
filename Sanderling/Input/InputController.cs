@@ -38,6 +38,7 @@ namespace Sanderling.Input
         public bool ToggleHud;
         public bool ToggleMode;
         public bool ToggleCollision;
+        public bool SaveView;
     }
 
     /// <summary>
@@ -118,6 +119,7 @@ namespace Sanderling.Input
             frame.ToggleHud = _keyboard.ToggleHudPressed;
             frame.ToggleMode = _keyboard.ToggleModePressed;
             frame.ToggleCollision = _keyboard.ToggleCollisionPressed;
+            frame.SaveView = _keyboard.SaveViewPressed;
 
             // Wheel: 120 units per notch; the fractional remainder of high-resolution wheels carries over to the next frame
             if (focus)

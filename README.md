@@ -113,10 +113,13 @@ The settings commands are not available while navigating.
 | F | Switch between Fly and Walk mode (current session only) |
 | C | Walk mode: switch collision on / off (current session only), e.g. to get out after starting inside a wall |
 | Tab | Toggle look mode: Drag (default; hold left or right mouse button, Enscape style) / Free (cursor hidden and locked, game style) |
+| V | Save the current view as a named view, named `Sanderling View yyyy-MM-dd HH-mm-ss` (e.g. `Sanderling View 2026-10-01 16-05-04`) (saving twice in the same second appends (2), (3), ...) |
 | H | Show / hide the HUD (current session only) |
 | Esc | Exit navigation |
 
 Fly and Walk each remember their own mouse wheel speed level (defaults: Fly 2.0 m/s, Walk 1.5 m/s).
+
+Views saved with V appear in Rhino's Named Views panel and include the camera position, direction and lens length. Saving does not interrupt navigation; the HUD briefly shows `VIEW SAVED` with the name.
 
 Lens length comes from the Rhino viewport itself: Sanderling uses the viewport's current lens and never stores its own. Changes made with Alt + mouse wheel stay on the viewport after exit.
 
@@ -217,6 +220,7 @@ These parameters and the speed levels persist across Rhino restarts. Mode (F), l
 - [ ] **Unit consistency:** the same speed level produces the same real-world speed in mm, m, inch and foot models.
 - [ ] **Enter / exit:** after repeatedly entering and exiting, Alt+Tab, closing the view and closing the document, Rhino always returns to normal.
 - [ ] **Restore:** after exiting, Rhino's view rotation, selection and command input work normally; `UndoView` returns to the pre-navigation view.
+- [ ] **Save view:** V adds a `Sanderling View ...` entry to the Named Views panel without leaving navigation; restoring it shows the same camera and lens.
 
 ### V2 — Walk
 

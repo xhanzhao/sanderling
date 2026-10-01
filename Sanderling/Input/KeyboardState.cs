@@ -16,6 +16,7 @@ namespace Sanderling.Input
         private bool _hWasDown = true;
         private bool _fWasDown = true;
         private bool _cWasDown = true;
+        private bool _vWasDown = true;
 
         public bool Forward { get; private set; }
         public bool Backward { get; private set; }
@@ -38,6 +39,9 @@ namespace Sanderling.Input
 
         /// <summary>C was just pressed this frame (edge-triggered).</summary>
         public bool ToggleCollisionPressed { get; private set; }
+
+        /// <summary>V was just pressed this frame (edge-triggered): save the current view as a named view.</summary>
+        public bool SaveViewPressed { get; private set; }
 
         public int ForwardAxis { get { return (Forward ? 1 : 0) - (Backward ? 1 : 0); } }
         public int StrafeAxis { get { return (Right ? 1 : 0) - (Left ? 1 : 0); } }
@@ -76,6 +80,10 @@ namespace Sanderling.Input
             bool cDown = Win32.IsKeyDown(Win32.VK_C);
             ToggleCollisionPressed = cDown && !_cWasDown;
             _cWasDown = cDown;
+
+            bool vDown = Win32.IsKeyDown(Win32.VK_V);
+            SaveViewPressed = vDown && !_vWasDown;
+            _vWasDown = vDown;
         }
 
         public void Clear()
@@ -86,11 +94,13 @@ namespace Sanderling.Input
             ToggleHudPressed = false;
             ToggleModePressed = false;
             ToggleCollisionPressed = false;
+            SaveViewPressed = false;
             // e.g. Tab may still be held when Alt+Tab-ing back into Rhino; that should not trigger a toggle
             _tabWasDown = true;
             _hWasDown = true;
             _fWasDown = true;
             _cWasDown = true;
+            _vWasDown = true;
         }
     }
 }

@@ -55,6 +55,7 @@ namespace Sanderling.Display
             { "F",         "Fly / Walk" },
             { "C",         "Collision" },
             { "Tab",       "Look mode" },
+            { "V",         "Save view" },
             { "H",         "Hide HUD" },
             { "Esc",       "Exit" }
         };
@@ -124,7 +125,15 @@ namespace Sanderling.Display
             Add("SANDERLING", TextMain, TitleSize, x, y);
             y += TitleGap;
             Add(_state.Mode == NavigationMode.Walk ? "WALK MODE" : "FLY MODE", TextMain, BodySize, x, y);
-            y += LineHeight + SectionGap;
+            y += LineHeight;
+
+            // Short-lived confirmation, e.g. after saving a view with V
+            if (!string.IsNullOrEmpty(_state.FlashMessage))
+            {
+                Add(_state.FlashMessage, Accent, BodySize, x, y);
+                y += LineHeight;
+            }
+            y += SectionGap;
 
             Add("Speed: " + FormatSpeed(_state.BaseSpeed) + " m/s", TextMain, BodySize, x, y);
             y += LineHeight;

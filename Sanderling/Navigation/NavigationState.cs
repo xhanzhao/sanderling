@@ -91,6 +91,9 @@ namespace Sanderling.Navigation
         /// <summary>Whether the HUD panel is shown. Toggled with H (session-only).</summary>
         public bool HudVisible { get; set; }
 
+        /// <summary>Short-lived HUD message (e.g. after saving a view); null when nothing is shown.</summary>
+        public string FlashMessage { get; set; }
+
         /// <summary>HUD content changed and needs a redraw (even if the camera did not move).</summary>
         public bool HudDirty { get; set; }
 

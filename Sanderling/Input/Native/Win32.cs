@@ -41,6 +41,7 @@ namespace Sanderling.Input.Native
         public const int VK_H = 0x48;
         public const int VK_Q = 0x51;
         public const int VK_S = 0x53;
+        public const int VK_V = 0x56;
         public const int VK_W = 0x57;
 
         public delegate IntPtr HookProc(int nCode, IntPtr wParam, IntPtr lParam);
