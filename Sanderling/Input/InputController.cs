@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Sanderling.Input.Native;
 using Sanderling.Navigation;
@@ -51,7 +50,7 @@ namespace Sanderling.Input
     internal sealed class InputController : IDisposable
     {
         private readonly IntPtr _viewHandle;
-        private readonly uint _processId;
+        private IntPtr _rootHandle; // top-level window containing the navigation view (main window, or a floating view frame)
         private readonly KeyboardState _keyboard = new KeyboardState();
         private readonly MouseLook _mouse = new MouseLook();
 
@@ -73,7 +72,7 @@ namespace Sanderling.Input
         public InputController(IntPtr viewHandle)
         {
             _viewHandle = viewHandle;
-            _processId = (uint)Process.GetCurrentProcess().Id;
+            _rootHandle = Win32.GetAncestor(viewHandle, Win32.GA_ROOT);
         }
 
         /// <summary>Installs the hooks. Must be called on the Rhino main UI thread (i.e. inside RunCommand).</summary>
@@ -104,7 +103,7 @@ namespace Sanderling.Input
             InputFrame frame = new InputFrame();
 
             RefreshViewRect();
-            bool focus = RhinoHasFocus() && _viewRectValid;
+            bool focus = IsNavigationForeground && _viewRectValid;
             frame.HasFocus = focus;
 
             _keyboard.Update(focus);
@@ -198,13 +197,55 @@ namespace Sanderling.Input
             if (_viewRectValid) _viewRect = r;
         }
 
-        private bool RhinoHasFocus()
+        /// <summary>
+        /// True only while the window that contains the navigation view is the active window.
+        ///
+        /// Any other window - another application, but also Rhino's own dialogs, floating panels and
+        /// message boxes - makes this false. Navigation then pauses and stops intercepting input, so that
+        /// window works normally (e.g. Named Views > Save As opened during navigation). It resumes automatically
+        /// when the view's window is active again.
+        /// </summary>
+        public bool IsNavigationForeground
         {
-            IntPtr fg = Win32.GetForegroundWindow();
-            if (fg == IntPtr.Zero) return false;
-            uint pid;
-            Win32.GetWindowThreadProcessId(fg, out pid);
-            return pid == _processId;
+            get
+            {
+                if (_rootHandle == IntPtr.Zero) _rootHandle = Win32.GetAncestor(_viewHandle, Win32.GA_ROOT);
+                IntPtr fg = Win32.GetForegroundWindow();
+                return fg != IntPtr.Zero && fg == _rootHandle;
+            }
+        }
+
+        /// <summary>Whether a window is the navigation view or one of its child windows.</summary>
+        private bool IsViewWindow(IntPtr hwnd)
+        {
+            return hwnd != IntPtr.Zero && (hwnd == _viewHandle || Win32.IsChild(_viewHandle, hwnd));
+        }
+
+        /// <summary>
+        /// Whether a mouse message is meant for the navigation view: sent to the view (or a child of it), or to a
+        /// container window that holds the view while the cursor is over the viewport. Dialogs and floating panels
+        /// are never ancestors of the view, so they always keep their mouse input.
+        /// </summary>
+        private bool IsViewTarget(IntPtr hwnd, int x, int y)
+        {
+            if (IsViewWindow(hwnd)) return true;
+            return hwnd != IntPtr.Zero && Win32.IsChild(hwnd, _viewHandle) && _viewRect.Contains(x, y);
+        }
+
+        /// <summary>Whether a window belongs to the navigation view's top-level window (excludes dialogs and floating panels).</summary>
+        private bool IsInNavigationWindow(IntPtr hwnd)
+        {
+            return hwnd != IntPtr.Zero && _rootHandle != IntPtr.Zero
+                && (hwnd == _rootHandle || Win32.IsChild(_rootHandle, hwnd));
+        }
+
+        /// <summary>
+        /// Called from the hooks when another window has become active. Releases a captured cursor immediately,
+        /// because the real-time loop may be blocked while a modal dialog is open and cannot do it itself.
+        /// </summary>
+        private void YieldToOtherWindow()
+        {
+            if (_mouse.IsCaptured) _mouse.Release(false);
         }
 
         // ------------------------------------------------------------------
@@ -217,6 +258,13 @@ namespace Sanderling.Input
             {
                 if (nCode == Win32.HC_ACTION || nCode == Win32.HC_NOREMOVE)
                 {
+                    // Another Rhino window (dialog, floating panel) is active: let it receive the keys
+                    if (!IsNavigationForeground)
+                    {
+                        YieldToOtherWindow();
+                        return Win32.CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
+                    }
+
                     int vk = wParam.ToInt32();
                     bool keyUp = ((lParam.ToInt64() >> 31) & 1) != 0;
 
@@ -255,10 +303,17 @@ namespace Sanderling.Input
                         Win32.MOUSEHOOKSTRUCTEX data =
                             (Win32.MOUSEHOOKSTRUCTEX)Marshal.PtrToStructure(lParam, typeof(Win32.MOUSEHOOKSTRUCTEX));
 
-                        if (_viewRect.Contains(data.pt.X, data.pt.Y))
+                        if (!IsNavigationForeground)
                         {
-                            // Swallow mouse button / move messages inside the viewport:
-                            // RMB no longer rotates, LMB no longer selects objects
+                            // A dialog or floating panel is active: release the cursor and let the mouse work normally
+                            YieldToOtherWindow();
+                        }
+                        else if (IsViewTarget(data.hwnd, data.pt.X, data.pt.Y))
+                        {
+                            // Swallow mouse messages that target the navigation view itself:
+                            // RMB no longer rotates, LMB no longer selects objects.
+                            // Decided by target window, not screen position, so dialogs shown on top of
+                            // the viewport still receive their clicks.
                             return new IntPtr(1);
                         }
                     }
@@ -274,7 +329,8 @@ namespace Sanderling.Input
         /// <summary>
         /// Reads mouse wheel input. The wheel delta is taken from MSG.wParam (HIWORD), which is always
         /// populated, and the message is then turned into WM_NULL so Rhino does not zoom the view.
-        /// The wheel adjusts speed (or lens length with Alt held) wherever the cursor is inside Rhino while navigation is active.
+        /// The wheel adjusts speed (or lens length with Alt held) anywhere in the navigation view's window
+        /// (main window or floating view frame); dialogs and floating panels are not affected.
         /// </summary>
         private IntPtr GetMessageHookProc(int nCode, IntPtr wParam, IntPtr lParam)
         {
@@ -284,7 +340,10 @@ namespace Sanderling.Input
                 {
                     Win32.MSG m = (Win32.MSG)Marshal.PtrToStructure(lParam, typeof(Win32.MSG));
 
-                    if (m.message == Win32.WM_MOUSEWHEEL || m.message == Win32.WM_MOUSEHWHEEL)
+                    bool isWheel = m.message == Win32.WM_MOUSEWHEEL || m.message == Win32.WM_MOUSEHWHEEL;
+
+                    // Only take wheel input meant for the navigation window; dialogs and floating panels keep their scrolling
+                    if (isWheel && IsNavigationForeground && IsInNavigationWindow(m.hwnd))
                     {
                         // Count each message only once, when it is actually removed from the queue
                         if (m.message == Win32.WM_MOUSEWHEEL && (wParam.ToInt64() & Win32.PM_REMOVE) != 0)

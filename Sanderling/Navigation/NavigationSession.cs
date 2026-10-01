@@ -33,6 +33,7 @@ namespace Sanderling.Navigation
         private FlyNavigationController _fly;
         private WalkNavigationController _walk;
 
+        private InputController _input;
         private bool _exitRequested;
         private bool _viewDestroyed;
         private string _exitReason;
@@ -109,6 +110,7 @@ namespace Sanderling.Navigation
             _walk = new WalkNavigationController(camera, state, settings, collisionSettings, metersToModel, _doc);
             NavigationHUD hud = new NavigationHUD(state, settings, viewport.Id);
             InputController input = new InputController(_view.Handle);
+            _input = input;
 
             Result result = Result.Success;
             SubscribeEvents();
@@ -302,6 +304,8 @@ namespace Sanderling.Navigation
 
         private void OnEscapeKeyPressed(object sender, EventArgs e)
         {
+            // Esc pressed in a dialog opened during navigation (e.g. to cancel it) must not end navigation
+            if (_input != null && !_input.IsNavigationForeground) return;
             RequestExit(null);
         }
 

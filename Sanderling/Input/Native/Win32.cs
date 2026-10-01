@@ -143,6 +143,16 @@ namespace Sanderling.Input.Native
         [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();
 
+        public const uint GA_ROOT = 2;
+
+        /// <summary>GA_ROOT returns the top-level window that contains hwnd.</summary>
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsChild(IntPtr hWndParent, IntPtr hWnd);
+
         [DllImport("user32.dll")]
         public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 

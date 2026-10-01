@@ -42,12 +42,16 @@ namespace Sanderling.Input
             _captured = true;
         }
 
-        public void Release()
+        /// <param name="restorePosition">
+        /// Move the cursor back to where it was when captured. Pass false when another window (e.g. a dialog)
+        /// takes over, so the cursor does not jump away while the user is about to click in that window.
+        /// </param>
+        public void Release(bool restorePosition = true)
         {
             if (!_captured) return;
 
             Win32.ClipCursorRelease(System.IntPtr.Zero);
-            if (_hasRestorePos)
+            if (_hasRestorePos && restorePosition)
             {
                 Win32.SetCursorPos(_restorePos.X, _restorePos.Y);
             }

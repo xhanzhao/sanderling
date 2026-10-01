@@ -123,6 +123,7 @@ Lens length comes from the Rhino viewport itself: Sanderling uses the viewport's
 After exiting, the viewport stays where navigation ended. Run `UndoView` to return to the view from before navigation.
 While navigating, all key presses are swallowed (nothing reaches the command line), and mouse clicks and wheel input inside the viewport do not trigger Rhino's normal behavior.
 Switching to another application (Alt+Tab) pauses navigation and releases the cursor; navigation resumes automatically when you return to Rhino.
+The same happens when a Rhino dialog or floating panel becomes active during navigation (for example Named Views > Save As): navigation pauses, the dialog receives keyboard and mouse input normally, and navigation resumes when the dialog closes. Clicks on docked panels and toolbars outside the viewport are passed to Rhino; if they start another command, navigation ends.
 
 ## 6. Walk Mode Rules
 
