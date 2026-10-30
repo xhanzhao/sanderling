@@ -92,7 +92,9 @@ The first Walk session in a model builds a geometry cache; later sessions reuse 
 
 ## Settings
 
-Run `SanderlingSettings`. Lengths are in meters and converted to model units automatically. Settings persist across Rhino restarts.
+Run `SanderlingSettings` (or click the gear button) to open the settings window: each number has a slider and a number box, the tabs are General, Movement, Walk and Objects, and Save / Cancel / Reset defaults are at the bottom. Drag the header to move the window; Esc closes it without saving. In scripts and macros, `-SanderlingSettings` uses the command-line options listed below instead.
+
+Lengths are in meters and converted to model units automatically. Settings persist across Rhino restarts.
 
 | Option | Default | Description |
 |---|---|---|

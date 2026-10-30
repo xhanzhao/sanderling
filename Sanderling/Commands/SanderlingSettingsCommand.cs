@@ -1,14 +1,17 @@
 using Sanderling.Navigation;
 using Sanderling.Settings;
+using Sanderling.UI;
 using Rhino;
 using Rhino.Commands;
 using Rhino.Input;
 using Rhino.Input.Custom;
+using Rhino.UI;
 
 namespace Sanderling.Commands
 {
     /// <summary>
-    /// SanderlingSettings - adjusts navigation parameters from the command line.
+    /// SanderlingSettings - opens the Sanderling settings window.
+    /// Run as -SanderlingSettings (scripted mode, e.g. from a macro) it uses the command-line options instead:
     /// The main page holds navigation and Walk settings; the "Collision" option opens a second page with
     /// the collision body, object type filters and stats. Enter on the main page saves, Esc discards all changes.
     /// Layer filtering is a separate command (SanderlingLayers) because it is stored per document.
@@ -28,6 +31,18 @@ namespace Sanderling.Commands
             PersistentSettings store = SanderlingPlugIn.Instance != null ? SanderlingPlugIn.Instance.Settings : null;
             NavigationSettings s = NavigationSettings.Load(store);
             CollisionSettings c = CollisionSettings.Load(store);
+
+            if (mode == RunMode.Interactive)
+            {
+                SettingsDialog dialog = new SettingsDialog(s, c);
+                dialog.ShowCentered(RhinoEtoApp.MainWindow);
+                if (!dialog.Saved) return Result.Cancel;
+
+                s.Save(store);
+                c.Save(store);
+                RhinoApp.WriteLine("Sanderling: Settings saved.");
+                return Result.Success;
+            }
 
             string[] lookModes = { "Drag", "Free" }; // order matches the LookMode enum values
             string[] modes = { "Fly", "Walk" };      // order matches the NavigationMode enum values
