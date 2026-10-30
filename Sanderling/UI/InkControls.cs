@@ -61,15 +61,16 @@ namespace Sanderling.UI
         }
     }
 
-    /// <summary>White box with a 1 pixel ink frame that hosts another control (the number text boxes).</summary>
+    /// <summary>
+    /// White box with a 1 pixel ink frame that hosts another control: the number text boxes, and the whole
+    /// settings window (which has no system frame).
+    /// </summary>
     internal sealed class InkBox : Drawable
     {
-        public InkBox(Control content)
+        public InkBox(Control content, Padding padding)
         {
             BackgroundColor = InkTheme.Paper;
-            // Fixed height so the box always fits inside a row; Windows text boxes are taller than they look
-            Height = 26;
-            Padding = new Padding(5, 3);
+            Padding = padding;
             Content = content;
             Paint += (sender, e) =>
             {

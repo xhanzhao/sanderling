@@ -42,7 +42,7 @@ namespace Sanderling.UI
             Minimizable = false;
             Maximizable = false;
             ShowInTaskbar = false;
-            BackgroundColor = InkTheme.Ink; // shows as the 1 px frame around the white content
+            BackgroundColor = InkTheme.Paper;
 
             _pages = new Control[]
             {
@@ -65,10 +65,9 @@ namespace Sanderling.UI
             _page.Height = PageHeight;
             _page.BackgroundColor = InkTheme.Paper;
 
-            Content = new Panel
-            {
-                Padding = new Padding(1),
-                Content = new TableLayout
+            // The 1 pixel frame is drawn snapped to the pixel grid, so all four sides are equally thick
+            Content = new InkBox(
+                new TableLayout
                 {
                     BackgroundColor = InkTheme.Paper,
                     Width = DialogWidth,
@@ -80,8 +79,8 @@ namespace Sanderling.UI
                         new Panel { Height = 1, BackgroundColor = InkTheme.Rule },
                         BuildFooter()
                     }
-                }
-            };
+                },
+                new Padding(1));
 
             KeyDown += (sender, e) =>
             {
@@ -302,7 +301,8 @@ namespace Sanderling.UI
                 BackgroundColor = InkTheme.Paper,
                 Width = 54
             };
-            InkBox boxFrame = new InkBox(box);
+            // Fixed height so the box always fits inside a row; Windows text boxes are taller than they look
+            InkBox boxFrame = new InkBox(box, new Padding(5, 3)) { Height = 26 };
 
             Func<double, double> round = v => Math.Round(Math.Max(min, Math.Min(max, v)), decimals);
             Func<double, string> format = v => v.ToString("F" + decimals, CultureInfo.InvariantCulture);
