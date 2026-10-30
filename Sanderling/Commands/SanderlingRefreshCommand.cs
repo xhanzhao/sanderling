@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using Sanderling.Navigation;
 using Sanderling.Scene;
@@ -28,14 +29,37 @@ namespace Sanderling.Commands
             CollisionSettings settings = CollisionSettings.Load(store);
             CollisionLayerFilter filter = CollisionLayerFilter.Load(doc);
 
-            RhinoApp.WriteLine("Sanderling: Rebuilding navigation geometry...");
+            RhinoApp.WriteLine("Sanderling: Rebuilding navigation geometry... (press Esc to cancel)");
             RhinoApp.Wait();
 
             NavigationScene scene = NavigationScene.ForDocument(doc);
             scene.MarkAllDirty();
 
+            bool escape = false;
+            EventHandler onEscape = (sender, e) => escape = true;
+            RhinoApp.EscapeKeyPressed += onEscape;
+
             SceneStats stats;
-            scene.Prepare(doc, settings, filter, out stats);
+            SpatialIndex index;
+            try
+            {
+                using (BuildProgress progress = new BuildProgress("Sanderling: Rebuilding geometry", () => escape, null))
+                {
+                    index = scene.Prepare(doc, settings, filter, progress, out stats);
+                }
+            }
+            finally
+            {
+                RhinoApp.EscapeKeyPressed -= onEscape;
+            }
+
+            if (index == null)
+            {
+                RhinoApp.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                    "Sanderling: Rebuild cancelled after {0} objects. The rest is rebuilt the next time Walk mode starts.",
+                    stats.Rebuilt));
+                return Result.Cancel;
+            }
 
             RhinoApp.WriteLine(string.Format(CultureInfo.InvariantCulture,
                 "Sanderling: Navigation geometry rebuilt - {0} objects, {1} meshes, {2} triangles ({3:0} ms).",

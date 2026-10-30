@@ -15,9 +15,27 @@ Sanderling lets you move through the Rhino viewport in real time with WASD + mou
 
 ## Installation
 
-1. Get `Sanderling.rhp` (build `Sanderling.sln` with Visual Studio 2022 and the .NET 8 SDK, or use a prebuilt copy).
-2. In Rhino, run `PlugInManager` → `Install...` and select `Sanderling.rhp`, or drag the `.rhp` file into the Rhino window.
-3. Open a model, activate a perspective viewport and run `Sanderling`.
+1. In Rhino 8, run `PackageManager`.
+2. Search for `sanderling` and click **Install**, then restart Rhino.
+3. Open a model, activate a perspective viewport and click a button on the **Sanderling** toolbar, or run `Sanderling`.
+
+Updates are installed the same way: `PackageManager` shows when a newer version is available.
+
+## Toolbar
+
+The Sanderling toolbar is installed with the package. Each button runs one command:
+
+| Button | Command |
+|---|---|
+| Sanderling (bird) | `Sanderling` |
+| Walk (footprints) | `SanderlingWalk` |
+| Fly (bird in flight) | `SanderlingFly` |
+| Settings (gear) | `SanderlingSettings` |
+| Layers | `SanderlingLayers` |
+| Refresh | `SanderlingRefresh` |
+
+If the toolbar is not visible, open it from Rhino's list of toolbars (it is called Sanderling).
+Clicking a toolbar button while navigating ends navigation first, then runs the button's command.
 
 ## Commands
 
@@ -62,7 +80,7 @@ Tips:
 - You are a capsule 0.25 m in radius and 1.80 m tall: walls, columns, furniture, railings and low ceilings block you, and you slide along them.
 - If no ground is found below the camera, the HUD shows `NO GROUND` and you walk at the current height.
 
-**What takes part in ground and collision:** visible meshes, Breps / surfaces, extrusions, SubDs and block instances on visible layers. Object types can be switched off on the `SanderlingSettings` collision page. `SanderlingLayers` filters by layer:
+**What takes part in ground and collision:** visible meshes, Breps / surfaces, extrusions, SubDs and block instances on visible layers. Object types can be switched off on the `SanderlingSettings` collision page. `SanderlingLayers` (or the layers button) opens the layer filter window: pick the mode, then check layers in the layer tree (a checked layer includes its sub-layers). In scripts, `-SanderlingLayers` uses command-line options.
 
 | Mode | Behavior | Typical use |
 |---|---|---|
@@ -70,11 +88,13 @@ Tips:
 | Exclude | Selected layers and their sub-layers are ignored | Glass, trees, people, site context |
 | Only | Only selected layers and their sub-layers take part | Very large models |
 
-The first Walk session in a model builds a geometry cache; later sessions reuse it and only rebuild changed objects. Run `SanderlingRefresh` if the cache ever seems out of date.
+The first Walk session in a model builds a geometry cache; later sessions reuse it and only rebuild changed objects. On large models the build shows its progress in the HUD and the status bar; press Esc to cancel it (navigation then ends, and the objects built so far are kept for next time). Run `SanderlingRefresh` if the cache ever seems out of date.
 
 ## Settings
 
-Run `SanderlingSettings`. Lengths are in meters and converted to model units automatically. Settings persist across Rhino restarts.
+Run `SanderlingSettings` (or click the gear button) to open the settings window: each number has a slider and a number box, the tabs are General, Movement, Walk and Objects, and Save / Cancel / Reset defaults are at the bottom. Drag the header to move the window; Esc closes it without saving. In scripts and macros, `-SanderlingSettings` uses the command-line options listed below instead.
+
+Lengths are in meters and converted to model units automatically. Settings persist across Rhino restarts.
 
 | Option | Default | Description |
 |---|---|---|
@@ -110,6 +130,11 @@ Run `SanderlingSettings`. Lengths are in meters and converted to model units aut
 - Layout views are not supported; use a model view.
 - Parallel viewports are switched to a 50 mm perspective when navigation starts (`UndoView` restores them).
 - Fly mode has no collision.
+
+## Building from Source
+
+Build `Sanderling.sln` with Visual Studio 2022 and the .NET 8 SDK. The output folders `bin/Release/net7.0-windows` and `bin/Release/net48` each contain `Sanderling.rhp` and `Sanderling.rui`; drag the `.rhp` into Rhino to test it.
+The toolbar file is generated from the SVG icons in `toolbar/icons` with `node toolbar/build_rui.js` (needs Node.js).
 
 ## License
 

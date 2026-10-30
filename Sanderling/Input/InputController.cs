@@ -113,6 +113,12 @@ namespace Sanderling.Input
             return true;
         }
 
+        /// <summary>Esc was pressed in the navigation window (seen by the keyboard hook) since navigation started.</summary>
+        public bool EscapePressed { get { return _escapeFromHook; } }
+
+        /// <summary>A click outside the viewport is being held back and will end navigation.</summary>
+        public bool OutsideClickPending { get { return _clickedOutside; } }
+
         public InputFrame Update(LookMode lookMode)
         {
             InputFrame frame = new InputFrame();

@@ -6,6 +6,7 @@ using Sanderling.Physics;
 using Sanderling.Scene;
 using Sanderling.Settings;
 using Rhino;
+using Rhino.Display;
 using Rhino.Geometry;
 
 namespace Sanderling.Navigation
@@ -31,25 +32,28 @@ namespace Sanderling.Navigation
         private readonly RhinoDoc _doc;
         private readonly CollisionSettings _collisionSettings;
         private readonly double _epsilon;
+        private readonly Func<bool> _cancelRequested;
 
         private CollisionController _collision; // created the first time Walk mode is activated in a session
         private BodyState _body;
         private bool _lastCollisionEnabled;
 
         public WalkNavigationController(CameraController camera, NavigationState state, NavigationSettings settings,
-                                        CollisionSettings collisionSettings, double metersToModel, RhinoDoc doc)
+                                        CollisionSettings collisionSettings, double metersToModel, RhinoDoc doc,
+                                        Func<bool> cancelRequested)
             : base(camera, state, settings, metersToModel)
         {
             _doc = doc;
+            _cancelRequested = cancelRequested;
             _collisionSettings = collisionSettings;
             _epsilon = 0.001 * metersToModel;
         }
 
         private double EyeHeight { get { return Settings.EyeHeight * MetersToModel; } }
 
-        public override void OnActivated()
+        public override bool OnActivated()
         {
-            EnsureCollision();
+            if (!EnsureCollision()) return false;
 
             NavigationState s = State;
             s.Velocity = new Vector3d(s.Velocity.X, s.Velocity.Y, 0.0);
@@ -72,6 +76,7 @@ namespace Sanderling.Navigation
                 RhinoApp.WriteLine("Sanderling: No ground found within {0:0.#} m below the camera. Walking at the current height.",
                                    Settings.GroundSearchDistance);
             }
+            return true;
         }
 
         protected override bool UpdateMovement(InputFrame input, double dt)
@@ -142,16 +147,37 @@ namespace Sanderling.Navigation
             return true;
         }
 
-        private void EnsureCollision()
+        /// <summary>
+        /// Builds the collision geometry the first time Walk mode is activated in a session.
+        /// The HUD and the status bar show the progress of a long build; Esc cancels it.
+        /// </summary>
+        /// <returns>false if the user cancelled the build.</returns>
+        private bool EnsureCollision()
         {
-            if (_collision != null) return;
+            if (_collision != null) return true;
 
-            RhinoApp.WriteLine("Sanderling: Preparing navigation geometry...");
+            NavigationState s = State;
+            RhinoApp.WriteLine("Sanderling: Preparing navigation geometry... (press Esc to cancel)");
             RhinoApp.Wait(); // let the command line show the message before a potentially long build
 
             CollisionLayerFilter filter = CollisionLayerFilter.Load(_doc);
             SceneStats stats;
-            SpatialIndex index = NavigationScene.ForDocument(_doc).Prepare(_doc, _collisionSettings, filter, out stats);
+            SpatialIndex index;
+            using (BuildProgress progress = new BuildProgress("Sanderling: Preparing geometry", _cancelRequested,
+                       percent => ShowBuildProgress(percent)))
+            {
+                index = NavigationScene.ForDocument(_doc).Prepare(_doc, _collisionSettings, filter, progress, out stats);
+            }
+            s.BuildMessage = null;
+            s.HudDirty = true;
+
+            if (index == null)
+            {
+                RhinoApp.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                    "Sanderling: Preparing navigation geometry cancelled after {0} objects. They are kept, so the next Walk session continues from there.",
+                    stats.Rebuilt));
+                return false;
+            }
 
             NavigationBody body = NavigationBody.Create(Settings, _collisionSettings, MetersToModel);
             _collision = new CollisionController(index, body, Settings.GroundSearchDistance * MetersToModel, MetersToModel);
@@ -168,6 +194,16 @@ namespace Sanderling.Navigation
             {
                 RhinoApp.WriteLine("Sanderling: No surfaces or meshes take part; Walk mode has no ground or walls.");
             }
+            return true;
+        }
+
+        /// <summary>Shows the build progress in the HUD. Redraws the view, so it is only called a few times per second.</summary>
+        private void ShowBuildProgress(int percent)
+        {
+            NavigationState s = State;
+            s.BuildMessage = string.Format(CultureInfo.InvariantCulture, "PREPARING GEOMETRY  {0}%   Esc to cancel", percent);
+            RhinoView view = Camera.Viewport.ParentView;
+            if (view != null) view.Redraw();
         }
     }
 }

@@ -35,6 +35,8 @@ namespace Sanderling.Scene
         private readonly Dictionary<Guid, CachedObject> _objects = new Dictionary<Guid, CachedObject>();
         private readonly HashSet<Guid> _dirty = new HashSet<Guid>();
         private bool _allDirty;
+        // Objects already re-meshed while _allDirty is set; lets a cancelled SanderlingRefresh continue where it stopped
+        private readonly HashSet<Guid> _rebuiltSinceAllDirty = new HashSet<Guid>();
 
         private NavigationScene()
         {
@@ -58,13 +60,23 @@ namespace Sanderling.Scene
         public void MarkAllDirty()
         {
             _allDirty = true;
+            _rebuiltSinceAllDirty.Clear();
+        }
+
+        private bool NeedsBuild(Guid id)
+        {
+            if (_allDirty && !_rebuiltSinceAllDirty.Contains(id)) return true;
+            return _dirty.Contains(id) || !_objects.ContainsKey(id);
         }
 
         /// <summary>
         /// Builds the spatial index for a navigation session: evaluates which objects take part,
         /// re-meshes new / changed objects only, and reuses everything else.
         /// </summary>
-        public SpatialIndex Prepare(RhinoDoc doc, CollisionSettings settings, CollisionLayerFilter filter, out SceneStats stats)
+        /// <param name="progress">Optional progress / cancellation. Objects already re-meshed when the build is cancelled
+        /// stay cached; the remaining ones are built next time.</param>
+        /// <returns>The spatial index, or null if the build was cancelled.</returns>
+        public SpatialIndex Prepare(RhinoDoc doc, CollisionSettings settings, CollisionLayerFilter filter, BuildProgress progress, out SceneStats stats)
         {
             Stopwatch timer = Stopwatch.StartNew();
             stats = new SceneStats();
@@ -82,8 +94,9 @@ namespace Sanderling.Scene
             enumerator.ObjectTypeFilter = ObjectType.Mesh | ObjectType.Brep | ObjectType.Extrusion
                                         | ObjectType.Surface | ObjectType.SubD | ObjectType.InstanceReference;
 
-            List<CachedObject> included = new List<CachedObject>();
-
+            // Pass 1: which objects take part, and how many of them need re-meshing (for the progress meter)
+            List<RhinoObject> candidates = new List<RhinoObject>();
+            int toBuild = 0;
             foreach (RhinoObject obj in doc.Objects.GetObjectList(enumerator))
             {
                 if (obj == null || !obj.Visible) continue;
@@ -95,9 +108,16 @@ namespace Sanderling.Scene
                 bool locked = obj.Attributes.Mode == ObjectMode.Locked || layers.IsLocked(layerIndex);
                 if (locked && !settings.CollideLocked) continue;
 
+                candidates.Add(obj);
+                if (NeedsBuild(obj.Id)) toBuild++;
+            }
+
+            // Pass 2: re-mesh what changed, reuse everything else
+            List<CachedObject> included = new List<CachedObject>(candidates.Count);
+            foreach (RhinoObject obj in candidates)
+            {
                 CachedObject entry;
-                bool needsBuild = _allDirty || _dirty.Contains(obj.Id) || !_objects.TryGetValue(obj.Id, out entry);
-                if (needsBuild)
+                if (NeedsBuild(obj.Id))
                 {
                     try
                     {
@@ -109,7 +129,15 @@ namespace Sanderling.Scene
                         entry = new CachedObject(obj.Id, obj.ObjectType);
                     }
                     _objects[obj.Id] = entry;
+                    _dirty.Remove(obj.Id);
+                    if (_allDirty) _rebuiltSinceAllDirty.Add(obj.Id);
                     stats.Rebuilt++;
+
+                    if (progress != null && !progress.Report(stats.Rebuilt, toBuild))
+                    {
+                        stats.Milliseconds = timer.Elapsed.TotalMilliseconds;
+                        return null; // cancelled: the flags above keep the remaining objects marked for the next build
+                    }
                 }
                 else
                 {
@@ -123,6 +151,7 @@ namespace Sanderling.Scene
 
             _dirty.Clear();
             _allDirty = false;
+            _rebuiltSinceAllDirty.Clear();
             PurgeDeleted(doc);
 
             SpatialIndex index = new SpatialIndex(included);

@@ -127,6 +127,12 @@ namespace Sanderling.Display
             Add(_state.Mode == NavigationMode.Walk ? "WALK MODE" : "FLY MODE", TextMain, BodySize, x, y);
             y += LineHeight;
 
+            if (!string.IsNullOrEmpty(_state.BuildMessage))
+            {
+                Add(_state.BuildMessage, Warning, BodySize, x, y);
+                y += LineHeight;
+            }
+
             // Short-lived confirmation, e.g. after saving a view with V
             if (!string.IsNullOrEmpty(_state.FlashMessage))
             {

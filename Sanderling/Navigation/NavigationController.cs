@@ -37,13 +37,16 @@ namespace Sanderling.Navigation
             _stopThreshold = 0.001 * metersToModel; // Below 1 mm/s is treated as stopped
         }
 
+        protected CameraController Camera { get { return _camera; } }
         protected NavigationState State { get { return _state; } }
         protected NavigationSettings Settings { get { return _settings; } }
         protected double MetersToModel { get { return _metersToModel; } }
 
         /// <summary>Called when this controller becomes the active one (session start or mode switch).</summary>
-        public virtual void OnActivated()
+        /// <returns>false if activation was cancelled by the user; navigation then ends.</returns>
+        public virtual bool OnActivated()
         {
+            return true;
         }
 
         /// <summary>

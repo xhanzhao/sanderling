@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RhinoUI guid="1c23a7cb-69a6-47b9-9557-f6cc1a51adc9" plug_in_guid="db321efe-67e5-460e-9076-c687ad841558" major_ver="8" minor_ver="0" localize="False" default_language_id="1033">
+  <extend_rhino_menus />
+  <menus />
+  <tool_bar_groups>
+    <tool_bar_group guid="91e6b7cd-9f75-4237-99c1-ef8bdb7111fb" dock_bar_guid32="00000000-0000-0000-0000-000000000000" dock_bar_guid64="00000000-0000-0000-0000-000000000000" active_tool_bar_group="ed1d2ba9-f738-4e36-a4f5-e6e224b2c373" single_file="False" hide_single_tab="False" point_floating="200,200">
+      <text>
+        <locale_1033>Sanderling</locale_1033>
+        <locale_2052>Sanderling</locale_2052>
+      </text>
+      <dock_bar_info visible="True" floating="True" />
+      <tool_bar_group_item guid="ed1d2ba9-f738-4e36-a4f5-e6e224b2c373" major_version="1" minor_version="1">
+        <text>
+          <locale_1033>Sanderling</locale_1033>
+          <locale_2052>Sanderling</locale_2052>
+        </text>
+        <tool_bar_id>e98d1fde-5ffa-4a9c-bd9e-396b2cb7f588</tool_bar_id>
+      </tool_bar_group_item>
+    </tool_bar_group>
+  </tool_bar_groups>
+  <tool_bars>
+    <tool_bar guid="e98d1fde-5ffa-4a9c-bd9e-396b2cb7f588" bitmap_id="00000000-0000-0000-0000-000000000000" item_display_style="control_only">
+      <text>
+        <locale_1033>Sanderling</locale_1033>
+        <locale_2052>Sanderling</locale_2052>
+      </text>
+      <tool_bar_item guid="dbce5810-7177-42a6-a48a-664e43a38d4e" button_display_mode="control_only" button_style="normal">
+        <left_macro_id>28f7ec90-e08c-4c0b-b7a5-726f6fb3aebc</left_macro_id>
+      </tool_bar_item>
+      <tool_bar_item guid="6f72cfcd-ed9b-494d-8df3-5a85ee81ac11" button_display_mode="control_only" button_style="normal">
+        <left_macro_id>eeed5b4d-70e6-46ed-8f76-05253e1427cf</left_macro_id>
+      </tool_bar_item>
+      <tool_bar_item guid="1c163291-1289-4cb3-a038-e41ddff7e54f" button_display_mode="control_only" button_style="normal">
+        <left_macro_id>422010c1-f875-4be8-baf2-589b32a686c0</left_macro_id>
+      </tool_bar_item>
+      <tool_bar_item guid="10dc7649-7199-4c6c-92af-60898e69b1a9" button_display_mode="control_only" button_style="normal">
+        <left_macro_id>34c42708-6d99-4a6b-958f-83f7a0fa1e38</left_macro_id>
+      </tool_bar_item>
+      <tool_bar_item guid="c2ad3a4f-0996-4839-800f-ec92a11cddf1" button_display_mode="control_only" button_style="normal">
+        <left_macro_id>a529879d-e6f4-48a4-9aa9-806502d37ec5</left_macro_id>
+      </tool_bar_item>
+      <tool_bar_item guid="2244b190-476c-40cc-b74b-8d17aeff945e" button_display_mode="control_only" button_style="normal">
+        <left_macro_id>21a89a49-aa9b-4aa3-9ef7-1230fe14e887</left_macro_id>
+      </tool_bar_item>
+    </tool_bar>
+  </tool_bars>
+  <macros>
+    <macro_item guid="28f7ec90-e08c-4c0b-b7a5-726f6fb3aebc" bitmap_id="fef8c725-faa7-42ba-aadb-0d96371b464a">
+      <text>
+        <locale_1033>Sanderling</locale_1033>
+        <locale_2052>Sanderling</locale_2052>
+      </text>
+      <tooltip>
+        <locale_1033>Start navigation in the default mode (Fly unless changed in settings)</locale_1033>
+        <locale_2052>开始导航（使用设置中的默认模式，默认是飞行）</locale_2052>
+      </tooltip>
+      <help_text>
+        <locale_1033>Start navigation in the default mode (Fly unless changed in settings)</locale_1033>
+        <locale_2052>开始导航（使用设置中的默认模式，默认是飞行）</locale_2052>
+      </help_text>
+      <button_text>
+        <locale_1033>Sanderling</locale_1033>
+        <locale_2052>Sanderling</locale_2052>
+      </button_text>
+      <menu_text>
+        <locale_1033>Sanderling</locale_1033>
+        <locale_2052>Sanderling</locale_2052>
+      </menu_text>
+      <script>! _Sanderling</script>
+    </macro_item>
+    <macro_item guid="eeed5b4d-70e6-46ed-8f76-05253e1427cf" bitmap_id="96c055b4-81b7-4898-bac0-77979eb7e316">
+      <text>
+        <locale_1033>Sanderling Walk</locale_1033>
+        <locale_2052>Sanderling 漫游</locale_2052>
+      </text>
+      <tooltip>
+        <locale_1033>Start navigation in Walk mode: eye height, floors, stairs and collision</locale_1033>
+        <locale_2052>以漫游模式开始导航：人眼高度、贴地行走、自动上楼梯、碰撞</locale_2052>
+      </tooltip>
+      <help_text>
+        <locale_1033>Start navigation in Walk mode: eye height, floors, stairs and collision</locale_1033>
+        <locale_2052>以漫游模式开始导航：人眼高度、贴地行走、自动上楼梯、碰撞</locale_2052>
+      </help_text>
+      <button_text>
+        <locale_1033>Sanderling Walk</locale_1033>
+        <locale_2052>Sanderling 漫游</locale_2052>
+      </button_text>
+      <menu_text>
+        <locale_1033>Sanderling Walk</locale_1033>
+        <locale_2052>Sanderling 漫游</locale_2052>
+      </menu_text>
+      <script>! _SanderlingWalk</script>
+    </macro_item>
+    <macro_item guid="422010c1-f875-4be8-baf2-589b32a686c0" bitmap_id="ed4b89fa-c286-41cb-a922-275249632257">
+      <text>
+        <locale_1033>Sanderling Fly</locale_1033>
+        <locale_2052>Sanderling 飞行</locale_2052>
+      </text>
+      <tooltip>
+        <locale_1033>Start navigation in Fly mode: free flight anywhere in the model</locale_1033>
+        <locale_2052>以飞行模式开始导航：在模型中自由飞行</locale_2052>
+      </tooltip>
+      <help_text>
+        <locale_1033>Start navigation in Fly mode: free flight anywhere in the model</locale_1033>
+        <locale_2052>以飞行模式开始导航：在模型中自由飞行</locale_2052>
+      </help_text>
+      <button_text>
+        <locale_1033>Sanderling Fly</locale_1033>
+        <locale_2052>Sanderling 飞行</locale_2052>
+      </button_text>
+      <menu_text>
+        <locale_1033>Sanderling Fly</locale_1033>
+        <locale_2052>Sanderling 飞行</locale_2052>
+      </menu_text>
+      <script>! _SanderlingFly</script>
+    </macro_item>
+    <macro_item guid="34c42708-6d99-4a6b-958f-83f7a0fa1e38" bitmap_id="3fcbaf7d-7ff4-46eb-9a03-f8990d4ce886">
+      <text>
+        <locale_1033>Sanderling Settings</locale_1033>
+        <locale_2052>Sanderling 设置</locale_2052>
+      </text>
+      <tooltip>
+        <locale_1033>Navigation, Walk mode and collision settings</locale_1033>
+        <locale_2052>导航、漫游模式和碰撞的参数设置</locale_2052>
+      </tooltip>
+      <help_text>
+        <locale_1033>Navigation, Walk mode and collision settings</locale_1033>
+        <locale_2052>导航、漫游模式和碰撞的参数设置</locale_2052>
+      </help_text>
+      <button_text>
+        <locale_1033>Sanderling Settings</locale_1033>
+        <locale_2052>Sanderling 设置</locale_2052>
+      </button_text>
+      <menu_text>
+        <locale_1033>Sanderling Settings</locale_1033>
+        <locale_2052>Sanderling 设置</locale_2052>
+      </menu_text>
+      <script>! _SanderlingSettings</script>
+    </macro_item>
+    <macro_item guid="a529879d-e6f4-48a4-9aa9-806502d37ec5" bitmap_id="3d07b543-734e-4f3c-8f4b-b5febe13c4cb">
+      <text>
+        <locale_1033>Sanderling Layers</locale_1033>
+        <locale_2052>Sanderling 图层</locale_2052>
+      </text>
+      <tooltip>
+        <locale_1033>Choose which layers take part in Walk mode ground and collision</locale_1033>
+        <locale_2052>选择哪些图层参与漫游模式的地面检测和碰撞</locale_2052>
+      </tooltip>
+      <help_text>
+        <locale_1033>Choose which layers take part in Walk mode ground and collision</locale_1033>
+        <locale_2052>选择哪些图层参与漫游模式的地面检测和碰撞</locale_2052>
+      </help_text>
+      <button_text>
+        <locale_1033>Sanderling Layers</locale_1033>
+        <locale_2052>Sanderling 图层</locale_2052>
+      </button_text>
+      <menu_text>
+        <locale_1033>Sanderling Layers</locale_1033>
+        <locale_2052>Sanderling 图层</locale_2052>
+      </menu_text>
+      <script>! _SanderlingLayers</script>
+    </macro_item>
+    <macro_item guid="21a89a49-aa9b-4aa3-9ef7-1230fe14e887" bitmap_id="65d83314-1b30-416c-9e74-7a4a200f54a7">
+      <text>
+        <locale_1033>Sanderling Refresh</locale_1033>
+        <locale_2052>Sanderling 刷新</locale_2052>
+      </text>
+      <tooltip>
+        <locale_1033>Rebuild the cached Walk mode geometry of the active document</locale_1033>
+        <locale_2052>重建当前文档的漫游几何缓存</locale_2052>
+      </tooltip>
+      <help_text>
+        <locale_1033>Rebuild the cached Walk mode geometry of the active document</locale_1033>
+        <locale_2052>重建当前文档的漫游几何缓存</locale_2052>
+      </help_text>
+      <button_text>
+        <locale_1033>Sanderling Refresh</locale_1033>
+        <locale_2052>Sanderling 刷新</locale_2052>
+      </button_text>
+      <menu_text>
+        <locale_1033>Sanderling Refresh</locale_1033>
+        <locale_2052>Sanderling 刷新</locale_2052>
+      </menu_text>
+      <script>! _SanderlingRefresh</script>
+    </macro_item>
+  </macros>
+  <icons>
+    <icon guid="fef8c725-faa7-42ba-aadb-0d96371b464a">
+      <light><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<g transform="translate(0 -1.3)">
+<g stroke="#1d1f23" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M11.6 15.6 L10.2 18.6 L8.6 19.4"/><path d="M14.6 15.6 L16.2 18.4 L18 18.8"/><path d="M19.6 10.4 L22.8 11.4"/></g>
+<path fill-rule="evenodd" fill="#1d1f23" d="M2.5 12.6 C6 11.8 9.5 10.2 13 9.8 C14.4 7.9 16.9 7.3 18.5 8.3 C19.6 9 20 10.2 19.8 11.3 C19.2 13.7 17 15.6 13.6 15.8 C10 16 6.3 14.3 2.5 12.6 Z M18.35 9.9 A0.75 0.75 0 1 0 16.85 9.9 A0.75 0.75 0 1 0 18.35 9.9 Z"/>
+</g>
+</svg></light>
+      <dark><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<g transform="translate(0 -1.3)">
+<g stroke="#e6e6e6" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M11.6 15.6 L10.2 18.6 L8.6 19.4"/><path d="M14.6 15.6 L16.2 18.4 L18 18.8"/><path d="M19.6 10.4 L22.8 11.4"/></g>
+<path fill-rule="evenodd" fill="#e6e6e6" d="M2.5 12.6 C6 11.8 9.5 10.2 13 9.8 C14.4 7.9 16.9 7.3 18.5 8.3 C19.6 9 20 10.2 19.8 11.3 C19.2 13.7 17 15.6 13.6 15.8 C10 16 6.3 14.3 2.5 12.6 Z M18.35 9.9 A0.75 0.75 0 1 0 16.85 9.9 A0.75 0.75 0 1 0 18.35 9.9 Z"/>
+</g>
+</svg></dark>
+    </icon>
+    <icon guid="96c055b4-81b7-4898-bac0-77979eb7e316">
+      <light><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<g transform="translate(0 -0.5)" stroke="#1d1f23" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<g transform="rotate(-12 7.5 16.5)"><path d="M7.5 16.5 L4.9 13.5 M7.5 16.5 L7.5 12.5 M7.5 16.5 L10.1 13.5 M7.5 16.5 L7.5 18.1"/></g>
+<g transform="rotate(12 16 9.5)"><path d="M16 9.5 L13.4 6.5 M16 9.5 L16 5.5 M16 9.5 L18.6 6.5 M16 9.5 L16 11.1"/></g>
+</g>
+</svg></light>
+      <dark><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<g transform="translate(0 -0.5)" stroke="#e6e6e6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<g transform="rotate(-12 7.5 16.5)"><path d="M7.5 16.5 L4.9 13.5 M7.5 16.5 L7.5 12.5 M7.5 16.5 L10.1 13.5 M7.5 16.5 L7.5 18.1"/></g>
+<g transform="rotate(12 16 9.5)"><path d="M16 9.5 L13.4 6.5 M16 9.5 L16 5.5 M16 9.5 L18.6 6.5 M16 9.5 L16 11.1"/></g>
+</g>
+</svg></dark>
+    </icon>
+    <icon guid="ed4b89fa-c286-41cb-a922-275249632257">
+      <light><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<path fill="#1d1f23" d="M1.5 9.7 C4.5 7.4 8 7.8 10.6 11.4 L12 12.8 L13.4 11.4 C16 7.8 19.5 7.4 22.5 9.7 C19 9.8 16.4 11.6 14.4 14.6 C13.6 15.8 12.8 16.2 12 16.2 C11.2 16.2 10.4 15.8 9.6 14.6 C7.6 11.6 5 9.8 1.5 9.7 Z"/>
+</svg></light>
+      <dark><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<path fill="#e6e6e6" d="M1.5 9.7 C4.5 7.4 8 7.8 10.6 11.4 L12 12.8 L13.4 11.4 C16 7.8 19.5 7.4 22.5 9.7 C19 9.8 16.4 11.6 14.4 14.6 C13.6 15.8 12.8 16.2 12 16.2 C11.2 16.2 10.4 15.8 9.6 14.6 C7.6 11.6 5 9.8 1.5 9.7 Z"/>
+</svg></dark>
+    </icon>
+    <icon guid="3fcbaf7d-7ff4-46eb-9a03-f8990d4ce886">
+      <light><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<g transform="translate(12 12) scale(0.8) translate(-12 -12)" fill="#1d1f23">
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(0 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(45 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(90 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(135 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(180 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(225 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(270 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(315 12 12)"/>
+<path fill-rule="evenodd" d="M18.6 12 A6.6 6.6 0 1 0 5.4 12 A6.6 6.6 0 1 0 18.6 12 Z M14.6 12 A2.6 2.6 0 1 0 9.4 12 A2.6 2.6 0 1 0 14.6 12 Z"/>
+</g>
+</svg></light>
+      <dark><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<g transform="translate(12 12) scale(0.8) translate(-12 -12)" fill="#e6e6e6">
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(0 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(45 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(90 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(135 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(180 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(225 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(270 12 12)"/>
+<rect x="10.4" y="2.2" width="3.2" height="4" rx="0.6" transform="rotate(315 12 12)"/>
+<path fill-rule="evenodd" d="M18.6 12 A6.6 6.6 0 1 0 5.4 12 A6.6 6.6 0 1 0 18.6 12 Z M14.6 12 A2.6 2.6 0 1 0 9.4 12 A2.6 2.6 0 1 0 14.6 12 Z"/>
+</g>
+</svg></dark>
+    </icon>
+    <icon guid="3d07b543-734e-4f3c-8f4b-b5febe13c4cb">
+      <light><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<g transform="translate(12 12) scale(0.8) translate(-12 -12)" stroke="#1d1f23" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+<path fill="#1d1f23" d="M12 3 L21 6.8 L12 10.6 L3 6.8 Z"/>
+<path fill="none" d="M3 12.4 L12 16.2 L21 12.4"/>
+<path fill="none" d="M3 18 L12 21.8 L21 18"/>
+</g>
+</svg></light>
+      <dark><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<g transform="translate(12 12) scale(0.8) translate(-12 -12)" stroke="#e6e6e6" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+<path fill="#e6e6e6" d="M12 3 L21 6.8 L12 10.6 L3 6.8 Z"/>
+<path fill="none" d="M3 12.4 L12 16.2 L21 12.4"/>
+<path fill="none" d="M3 18 L12 21.8 L21 18"/>
+</g>
+</svg></dark>
+    </icon>
+    <icon guid="65d83314-1b30-416c-9e74-7a4a200f54a7">
+      <light><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<g transform="translate(12 12) scale(0.8) translate(-12 -12)">
+<path d="M5.05 10.14 A7.2 7.2 0 0 1 17.35 7.18" stroke="#1d1f23" stroke-width="1.9" stroke-linecap="round" fill="none"/><path d="M19.49 9.56 L19.02 5.15 L15.15 8.62 Z" fill="#1d1f23"/>
+<path d="M18.95 13.86 A7.2 7.2 0 0 1 6.65 16.82" stroke="#1d1f23" stroke-width="1.9" stroke-linecap="round" fill="none"/><path d="M4.51 14.44 L4.98 18.85 L8.85 15.38 Z" fill="#1d1f23"/>
+</g>
+</svg></light>
+      <dark><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+<g transform="translate(12 12) scale(0.8) translate(-12 -12)">
+<path d="M5.05 10.14 A7.2 7.2 0 0 1 17.35 7.18" stroke="#e6e6e6" stroke-width="1.9" stroke-linecap="round" fill="none"/><path d="M19.49 9.56 L19.02 5.15 L15.15 8.62 Z" fill="#e6e6e6"/>
+<path d="M18.95 13.86 A7.2 7.2 0 0 1 6.65 16.82" stroke="#e6e6e6" stroke-width="1.9" stroke-linecap="round" fill="none"/><path d="M4.51 14.44 L4.98 18.85 L8.85 15.38 Z" fill="#e6e6e6"/>
+</g>
+</svg></dark>
+    </icon>
+  </icons>
+  <bitmaps />
+</RhinoUI>

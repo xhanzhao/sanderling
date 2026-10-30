@@ -94,6 +94,9 @@ namespace Sanderling.Navigation
         /// <summary>Short-lived HUD message (e.g. after saving a view); null when nothing is shown.</summary>
         public string FlashMessage { get; set; }
 
+        /// <summary>Progress of a long Walk geometry build, shown in the HUD; null when no build is running.</summary>
+        public string BuildMessage { get; set; }
+
         /// <summary>HUD content changed and needs a redraw (even if the camera did not move).</summary>
         public bool HudDirty { get; set; }
 
