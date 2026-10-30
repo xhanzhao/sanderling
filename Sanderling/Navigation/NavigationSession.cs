@@ -112,10 +112,13 @@ namespace Sanderling.Navigation
             camera.Apply(state.Position, state.Yaw, state.Pitch); // Apply corrections such as the pitch clamp
 
             _fly = new FlyNavigationController(camera, state, settings, metersToModel);
-            _walk = new WalkNavigationController(camera, state, settings, collisionSettings, metersToModel, _doc);
             NavigationHUD hud = new NavigationHUD(state, settings, viewport.Id);
             InputController input = new InputController(_view.Handle);
             _input = input;
+            // A long geometry build in Walk mode is cancelled by Esc, a click outside the viewport,
+            // or the view / document closing
+            _walk = new WalkNavigationController(camera, state, settings, collisionSettings, metersToModel, _doc,
+                                                 () => _exitRequested || input.EscapePressed || input.OutsideClickPending);
             _viewportId = viewport.Id;
 
             Result result = Result.Success;
@@ -133,9 +136,10 @@ namespace Sanderling.Navigation
                 PrintHelp(settings, state.Mode);
 
                 NavigationController controller = ControllerFor(state.Mode);
-                controller.OnActivated();
-
-                RunLoop(input, controller, state, settings);
+                if (controller.OnActivated())
+                {
+                    RunLoop(input, controller, state, settings);
+                }
             }
             catch (Exception ex)
             {
@@ -210,7 +214,7 @@ namespace Sanderling.Navigation
                 {
                     state.Mode = state.Mode == NavigationMode.Fly ? NavigationMode.Walk : NavigationMode.Fly;
                     controller = ControllerFor(state.Mode);
-                    controller.OnActivated();
+                    if (!controller.OnActivated()) break; // geometry build cancelled with Esc: end navigation
                     state.HudDirty = true;
                     RhinoApp.WriteLine(state.Mode == NavigationMode.Walk
                         ? "Sanderling: Walk mode - WASD walks on the ground, Q/E disabled. Press F for Fly mode."
