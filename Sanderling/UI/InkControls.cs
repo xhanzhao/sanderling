@@ -67,7 +67,9 @@ namespace Sanderling.UI
         public InkBox(Control content)
         {
             BackgroundColor = InkTheme.Paper;
-            Padding = new Padding(5, 4);
+            // Fixed height so the box always fits inside a row; Windows text boxes are taller than they look
+            Height = 26;
+            Padding = new Padding(5, 3);
             Content = content;
             Paint += (sender, e) =>
             {
