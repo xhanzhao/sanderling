@@ -132,7 +132,7 @@ Run `SanderlingSettings`. Lengths are in meters and converted to model units aut
 ## Building from Source
 
 Build `Sanderling.sln` with Visual Studio 2022 and the .NET 8 SDK. The output folders `bin/Release/net7.0-windows` and `bin/Release/net48` each contain `Sanderling.rhp` and `Sanderling.rui`; drag the `.rhp` into Rhino to test it.
-The toolbar file is generated from the SVG icons in `toolbar/icons` with `node toolbar/build_rui.js` (needs Playwright).
+The toolbar file is generated from the SVG icons in `toolbar/icons` with `node toolbar/build_rui.js` (needs Node.js).
 
 ## License
 

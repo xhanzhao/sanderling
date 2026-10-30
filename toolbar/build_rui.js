@@ -1,20 +1,22 @@
 // Builds Sanderling/Sanderling.rui (the Sanderling toolbar) from the SVG icons in toolbar/icons.
 //
 // Rhino opens a .rui file with the same name as the plug-in that sits next to the .rhp, so the toolbar is
-// installed together with the Yak package. The icons are rasterized to 16 / 24 / 32 px bitmap strips.
+// installed together with the Yak package. Uses the Rhino 8 format: each icon is stored as inline SVG in the
+// <icons> section, in a light and a dark variant (the dark one swaps the ink colour), and Rhino renders it at
+// the current screen resolution.
 //
-// Usage (needs Node.js and Playwright with Chromium):  node toolbar/build_rui.js
+// Usage (Node.js only):  node toolbar/build_rui.js
 // The GUIDs below are fixed: keep them, so Rhino treats a new version as the same toolbar.
 
 const fs = require('fs');
 const path = require('path');
-const { chromium } = require('playwright');
 
 const root = path.join(__dirname, '..');
 const iconDir = path.join(__dirname, 'icons');
 const output = path.join(root, 'Sanderling', 'Sanderling.rui');
 
 const RUI_GUID = '1c23a7cb-69a6-47b9-9557-f6cc1a51adc9';
+const PLUGIN_GUID = 'db321efe-67e5-460e-9076-c687ad841558'; // Properties/AssemblyInfo.cs
 const GROUP_GUID = '91e6b7cd-9f75-4237-99c1-ef8bdb7111fb';
 const GROUP_ITEM_GUID = 'ed1d2ba9-f738-4e36-a4f5-e6e224b2c373';
 const TOOLBAR_GUID = 'e98d1fde-5ffa-4a9c-bd9e-396b2cb7f588';
@@ -59,7 +61,8 @@ const buttons = [
   },
 ];
 
-const SIZES = [['small_bitmap', 16], ['normal_bitmap', 24], ['large_bitmap', 32]];
+const INK_LIGHT = '#1d1f23'; // colour used in the SVG sources
+const INK_DARK = '#e6e6e6';  // replaces it for Rhino's dark theme
 
 function esc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -69,27 +72,14 @@ function text(tag, en, zh, indent) {
   return `${indent}<${tag}>\n${indent}  <locale_1033>${esc(en)}</locale_1033>\n${indent}  <locale_2052>${esc(zh)}</locale_2052>\n${indent}</${tag}>`;
 }
 
-// Renders all icons side by side at the given size on a transparent background
-async function renderStrip(page, size) {
-  const cells = buttons.map(b => {
-    const svg = fs.readFileSync(path.join(iconDir, b.icon + '.svg'), 'utf8')
-      .replace(/<metadata>[\s\S]*?<\/metadata>/, '')
-      .replace('width="24" height="24"', `width="${size}" height="${size}"`);
-    return `<div style="width:${size}px;height:${size}px">${svg}</div>`;
-  }).join('');
-  await page.setViewportSize({ width: size * buttons.length, height: size });
-  await page.setContent(`<html><body style="margin:0;background:transparent"><div style="display:flex">${cells}</div></body></html>`);
-  const png = await page.screenshot({ omitBackground: true, clip: { x: 0, y: 0, width: size * buttons.length, height: size } });
-  return png.toString('base64');
+function loadSvg(name) {
+  return fs.readFileSync(path.join(iconDir, name + '.svg'), 'utf8')
+    .replace(/<metadata>[\s\S]*?<\/metadata>/, '')
+    .replace('width="24" height="24"', 'width="100%" height="100%"')
+    .trim();
 }
 
-(async () => {
-  const browser = await chromium.launch();
-  const page = await browser.newPage({ deviceScaleFactor: 1 });
-  const strips = {};
-  for (const [tag, size] of SIZES) strips[tag] = await renderStrip(page, size);
-  await browser.close();
-
+(() => {
   const toolbarItems = buttons.map(b => `      <tool_bar_item guid="${b.item}" button_display_mode="control_only" button_style="normal">
         <left_macro_id>${b.macro}</left_macro_id>
       </tool_bar_item>`).join('\n');
@@ -103,18 +93,23 @@ ${text('menu_text', b.en[0], b.zh[0], '      ')}
       <script>! _${b.command}</script>
     </macro_item>`).join('\n');
 
-  const bitmaps = SIZES.map(([tag, size]) => `    <${tag} item_width="${size}" item_height="${size}">
-      <bitmap>${strips[tag]}</bitmap>
-    </${tag}>`).join('\n');
-  const bitmapItems = buttons.map((b, i) => `    <bitmap_item guid="${b.bitmap}" index="${i}" />`).join('\n');
+  const icons = buttons.map(b => {
+    const light = loadSvg(b.icon);
+    const dark = light.split(INK_LIGHT).join(INK_DARK);
+    return `    <icon guid="${b.bitmap}">
+      <light>${light}</light>
+      <dark>${dark}</dark>
+    </icon>`;
+  }).join('\n');
 
   const rui = `<?xml version="1.0" encoding="utf-8"?>
-<RhinoUI major_ver="3" minor_ver="0" guid="${RUI_GUID}" localize="False" default_language_id="1033" dpi_scale="100">
+<RhinoUI guid="${RUI_GUID}" plug_in_guid="${PLUGIN_GUID}" major_ver="8" minor_ver="0" localize="False" default_language_id="1033">
   <extend_rhino_menus />
   <menus />
   <tool_bar_groups>
     <tool_bar_group guid="${GROUP_GUID}" dock_bar_guid32="00000000-0000-0000-0000-000000000000" dock_bar_guid64="00000000-0000-0000-0000-000000000000" active_tool_bar_group="${GROUP_ITEM_GUID}" single_file="False" hide_single_tab="False" point_floating="200,200">
 ${text('text', 'Sanderling', 'Sanderling', '      ')}
+      <dock_bar_info visible="True" floating="True" />
       <tool_bar_group_item guid="${GROUP_ITEM_GUID}" major_version="1" minor_version="1">
 ${text('text', 'Sanderling', 'Sanderling', '        ')}
         <tool_bar_id>${TOOLBAR_GUID}</tool_bar_id>
@@ -130,11 +125,10 @@ ${toolbarItems}
   <macros>
 ${macros}
   </macros>
-  <bitmaps>
-${bitmaps}
-${bitmapItems}
-  </bitmaps>
-  <scripts />
+  <icons>
+${icons}
+  </icons>
+  <bitmaps />
 </RhinoUI>
 `;
   fs.writeFileSync(output, rui);
