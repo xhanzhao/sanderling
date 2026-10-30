@@ -80,7 +80,7 @@ Tips:
 - You are a capsule 0.25 m in radius and 1.80 m tall: walls, columns, furniture, railings and low ceilings block you, and you slide along them.
 - If no ground is found below the camera, the HUD shows `NO GROUND` and you walk at the current height.
 
-**What takes part in ground and collision:** visible meshes, Breps / surfaces, extrusions, SubDs and block instances on visible layers. Object types can be switched off on the `SanderlingSettings` collision page. `SanderlingLayers` filters by layer:
+**What takes part in ground and collision:** visible meshes, Breps / surfaces, extrusions, SubDs and block instances on visible layers. Object types can be switched off on the `SanderlingSettings` collision page. `SanderlingLayers` (or the layers button) opens the layer filter window: pick the mode, then check layers in the layer tree (a checked layer includes its sub-layers). In scripts, `-SanderlingLayers` uses command-line options.
 
 | Mode | Behavior | Typical use |
 |---|---|---|

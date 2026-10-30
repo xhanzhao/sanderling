@@ -7,11 +7,14 @@ using Rhino.Commands;
 using Rhino.DocObjects;
 using Rhino.Input;
 using Rhino.Input.Custom;
+using Rhino.UI;
+using Sanderling.UI;
 
 namespace Sanderling.Commands
 {
     /// <summary>
-    /// SanderlingLayers - chooses which layers take part in Walk mode ground detection and collision.
+    /// SanderlingLayers - opens the layer filter window, which chooses which layers take part in Walk mode
+    /// ground detection and collision. Run as -SanderlingLayers (scripted mode) it uses command-line options.
     ///   All     - all visible layers (default)
     ///   Exclude - ignore the selected layers and their sub-layers (e.g. glass, trees, people, context)
     ///   Only    - use only the selected layers and their sub-layers (e.g. walls, slabs, stairs in large models)
@@ -30,6 +33,21 @@ namespace Sanderling.Commands
             if (NavigationSession.IsRunning || doc == null) return Result.Nothing;
 
             CollisionLayerFilter filter = CollisionLayerFilter.Load(doc);
+
+            if (mode == RunMode.Interactive)
+            {
+                LayerDialog dialog = new LayerDialog(CollectLayers(doc), filter.Mode, filter.LayerIds);
+                dialog.ShowCentered(RhinoEtoApp.MainWindow);
+                if (!dialog.Saved) return Result.Cancel;
+
+                filter.Mode = dialog.Mode;
+                filter.LayerIds.Clear();
+                foreach (Guid id in dialog.Checked) filter.LayerIds.Add(id);
+                filter.Save(doc);
+                RhinoApp.WriteLine("Sanderling: Layer filter saved - {0}", filter.Describe(doc));
+                return Result.Success;
+            }
+
             string[] modes = { "All", "Exclude", "Only" }; // order matches the CollisionLayerMode enum values
 
             RhinoApp.WriteLine("Sanderling: Current layer filter - {0}", filter.Describe(doc));
@@ -83,6 +101,42 @@ namespace Sanderling.Commands
             filter.Save(doc);
             RhinoApp.WriteLine("Sanderling: Layer filter saved - {0}", filter.Describe(doc));
             return Result.Success;
+        }
+
+        /// <summary>Document layers in layer panel order (children right after their parent).</summary>
+        private static List<LayerItem> CollectLayers(RhinoDoc doc)
+        {
+            List<LayerItem> items = new List<LayerItem>();
+            List<Layer> top = new List<Layer>();
+            foreach (Layer layer in doc.Layers)
+            {
+                if (layer != null && !layer.IsDeleted && layer.ParentLayerId == Guid.Empty) top.Add(layer);
+            }
+            top.Sort((a, b) => a.SortIndex.CompareTo(b.SortIndex));
+            foreach (Layer layer in top) AddLayer(items, layer, 0, -1, true);
+            return items;
+        }
+
+        private static void AddLayer(List<LayerItem> items, Layer layer, int depth, int parent, bool parentVisible)
+        {
+            LayerItem item = new LayerItem();
+            item.Id = layer.Id;
+            item.Name = layer.Name;
+            item.Depth = depth;
+            item.Parent = parent;
+            item.Visible = parentVisible && layer.IsVisible;
+            items.Add(item);
+            int index = items.Count - 1;
+
+            Layer[] children = layer.GetChildren();
+            if (children == null) return;
+            List<Layer> sorted = new List<Layer>();
+            foreach (Layer child in children)
+            {
+                if (child != null && !child.IsDeleted) sorted.Add(child);
+            }
+            sorted.Sort((a, b) => a.SortIndex.CompareTo(b.SortIndex));
+            foreach (Layer child in sorted) AddLayer(items, child, depth + 1, index, item.Visible);
         }
 
         private static void SelectLayers(RhinoDoc doc, CollisionLayerFilter filter)

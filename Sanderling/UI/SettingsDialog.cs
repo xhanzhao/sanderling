@@ -15,34 +15,24 @@ namespace Sanderling.UI
     ///
     /// The dialog edits the settings objects it is given; the caller saves them only when Saved is true.
     /// </summary>
-    internal sealed class SettingsDialog : Dialog
+    internal sealed class SettingsDialog : InkDialog
     {
         private const int DialogWidth = 440;
         private const int PageHeight = 7 * InkTheme.RowHeight + 8;
         private const int LabelWidth = 150;
-        private const int Side = 22;
 
         private readonly NavigationSettings _nav;
         private readonly CollisionSettings _col;
         private readonly List<Action> _refreshers = new List<Action>(); // re-read every control from the settings (after Reset)
+        private readonly List<Action> _commits = new List<Action>();    // apply what is typed in the number boxes
         private readonly Panel _page = new Panel();
         private readonly Control[] _pages;
 
-        private bool _dragging;
-        private PointF _dragOffset;
-
         public SettingsDialog(NavigationSettings nav, CollisionSettings col)
+            : base("Settings")
         {
             _nav = nav;
             _col = col;
-
-            Title = "Sanderling Settings";
-            WindowStyle = WindowStyle.None;
-            Resizable = false;
-            Minimizable = false;
-            Maximizable = false;
-            ShowInTaskbar = false;
-            BackgroundColor = InkTheme.Paper;
 
             _pages = new Control[]
             {
@@ -65,127 +55,27 @@ namespace Sanderling.UI
             _page.Height = PageHeight;
             _page.BackgroundColor = InkTheme.Paper;
 
-            // The 1 pixel frame is drawn snapped to the pixel grid, so all four sides are equally thick
-            Content = new InkBox(
-                new TableLayout
-                {
-                    BackgroundColor = InkTheme.Paper,
-                    Width = DialogWidth,
-                    Rows =
-                    {
-                        BuildHeader(),
-                        new TableLayout { Padding = new Padding(Side, 0, Side, 0), Rows = { tabs } },
-                        new TableLayout { Padding = new Padding(Side, 10, Side, 6), Rows = { _page } },
-                        new Panel { Height = 1, BackgroundColor = InkTheme.Rule },
-                        BuildFooter()
-                    }
-                },
-                new Padding(1));
-
-            KeyDown += (sender, e) =>
-            {
-                if (e.Key == Keys.Escape)
-                {
-                    Close();
-                    e.Handled = true;
-                }
-            };
-        }
-
-        /// <summary>Whether the user closed the window with Save.</summary>
-        public bool Saved { get; private set; }
-
-        /// <summary>Shows the dialog centered over the owner window.</summary>
-        public void ShowCentered(Window owner)
-        {
-            // Without a system frame, Windows sizes the window a few pixels too small for its content and cuts off
-            // the bottom edge. Size the client area to the content explicitly instead.
-            LoadComplete += (sender, e) =>
-            {
-                SizeF size = Content.GetPreferredSize(SizeF.PositiveInfinity);
-                ClientSize = new Size((int)Math.Ceiling(size.Width), (int)Math.Ceiling(size.Height));
-            };
-
-            if (owner != null)
-            {
-                LoadComplete += (sender, e) =>
-                {
-                    Rectangle o = owner.Bounds;
-                    Location = new Point(o.X + (o.Width - Width) / 2, o.Y + (o.Height - Height) / 3);
-                };
-                ShowModal(owner);
-            }
-            else
-            {
-                ShowModal();
-            }
-        }
-
-        // ------------------------------------------------------------------
-        // Frame
-        // ------------------------------------------------------------------
-
-        private Control BuildHeader()
-        {
-            Label title = new Label { Text = "SANDERLING", TextColor = InkTheme.Ink, Font = InkTheme.Body(10.5f, FontStyle.Bold), VerticalAlignment = VerticalAlignment.Center };
-            Label subtitle = new Label { Text = "Settings", TextColor = InkTheme.Muted, Font = InkTheme.Body(10.5f), VerticalAlignment = VerticalAlignment.Center };
-            InkButton close = new InkButton("✕", InkButtonStyle.Link);
-            close.Click += (sender, e) => Close();
-
-            TableLayout header = new TableLayout
-            {
-                Padding = new Padding(Side, 14, Side - 4, 6),
-                Spacing = new Size(8, 0),
-                BackgroundColor = InkTheme.Paper,
-                Rows = { new TableRow(new BirdMark(), title, subtitle, null, close) }
-            };
-
-            // The header moves the window (there is no system title bar)
-            foreach (Control c in new Control[] { header, title, subtitle })
-            {
-                c.MouseDown += (sender, e) =>
-                {
-                    if (e.Buttons != MouseButtons.Primary) return;
-                    _dragging = true;
-                    _dragOffset = Mouse.Position - (PointF)Location;
-                    e.Handled = true;
-                };
-                c.MouseMove += (sender, e) =>
-                {
-                    if (!_dragging) return;
-                    Location = Point.Round(Mouse.Position - _dragOffset);
-                };
-                c.MouseUp += (sender, e) => _dragging = false;
-            }
-            return header;
-        }
-
-        private Control BuildFooter()
-        {
             InkButton reset = new InkButton("Reset defaults", InkButtonStyle.Link);
-            InkButton cancel = new InkButton("Cancel", InkButtonStyle.Outline);
-            InkButton save = new InkButton("Save", InkButtonStyle.Primary);
-
             reset.Click += (sender, e) =>
             {
                 _nav.ResetToDefaults();
                 _col.ResetToDefaults();
                 foreach (Action refresh in _refreshers) refresh();
             };
-            cancel.Click += (sender, e) => Close();
-            save.Click += (sender, e) =>
-            {
-                Saved = true;
-                Close();
-            };
 
-            return new TableLayout
-            {
-                Padding = new Padding(Side, 14, Side, 16),
-                Spacing = new Size(10, 0),
-                BackgroundColor = InkTheme.Paper,
-                Rows = { new TableRow(reset, null, cancel, save) }
-            };
+            SetLayout(DialogWidth,
+                new TableLayout
+                {
+                    BackgroundColor = InkTheme.Paper,
+                    Rows = { tabs, new TableLayout { Padding = new Padding(0, 10, 0, 0), Rows = { _page } } }
+                },
+                reset);
+        }
+
+        /// <summary>A value typed into a number box without pressing Enter is still saved.</summary>
+        protected override void OnSaving()
+        {
+            foreach (Action commit in _commits) commit();
         }
 
         // ------------------------------------------------------------------
@@ -341,6 +231,7 @@ namespace Sanderling.UI
                 }
                 refresh(); // also restores the old value after invalid input
             };
+            _commits.Add(commit);
             box.LostFocus += (sender, e) => commit();
             box.KeyDown += (sender, e) =>
             {
