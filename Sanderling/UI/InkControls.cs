@@ -55,6 +55,17 @@ namespace Sanderling.UI
             g.AntiAlias = antiAlias;
         }
 
+        /// <summary>A 1 device pixel vertical line at x, snapped to the pixel grid.</summary>
+        public static void VerticalLine(Graphics g, Color color, float x, float top, float bottom, float scale)
+        {
+            bool antiAlias = g.AntiAlias;
+            g.AntiAlias = false;
+            float px = 1f / scale;
+            float left = Snap(x, scale);
+            g.FillRectangle(color, left, Snap(top, scale), px, Snap(bottom, scale) - Snap(top, scale));
+            g.AntiAlias = antiAlias;
+        }
+
         private static float Snap(float v, float scale)
         {
             return (float)Math.Round(v * scale) / scale;
@@ -331,6 +342,12 @@ namespace Sanderling.UI
                 DrawCentered(g, _font, selected ? InkTheme.Paper : InkTheme.Ink, cell, _options[i]);
             }
             DrawFrame(g, InkTheme.Ink, b);
+
+            // Dividers between the options (invisible next to the selected, ink-filled option)
+            for (int i = 1; i < _options.Length; i++)
+            {
+                InkFrame.VerticalLine(g, InkTheme.Ink, i * SegmentWidth, 0f, b.Height, PixelScale);
+            }
         }
     }
 
@@ -450,18 +467,46 @@ namespace Sanderling.UI
         }
     }
 
-    /// <summary>The Sanderling mark: the toolbar bird drawn as a vector path (24 x 24 units).</summary>
-    internal sealed class BirdMark : InkDrawable
+    /// <summary>
+    /// Window title: the Sanderling mark (the toolbar bird as a vector path) followed by "SANDERLING" and the
+    /// window name. The bird stands on the text baseline: its feet line up with the bottom of the capitals.
+    /// </summary>
+    internal sealed class InkTitle : InkDrawable
     {
-        public BirdMark()
+        private const float BirdWidth = 24f;
+        private const float BirdFeet = 19.95f; // lowest point of the bird (feet plus half the stroke), in bird units
+        private const float TextGap = 8f;
+
+        private readonly string _name;
+        private readonly Font _bold = InkTheme.Body(10.5f, FontStyle.Bold);
+        private readonly Font _regular = InkTheme.Body(10.5f);
+
+        public InkTitle(string name)
         {
-            Size = new Size(24, 24);
+            _name = name;
+            float width = BirdWidth + TextGap + _bold.MeasureString("SANDERLING").Width + TextGap + _regular.MeasureString(name).Width;
+            Size = new Size((int)Math.Ceiling(width) + 2, 28);
         }
 
         protected override void Draw(Graphics g, RectangleF b)
         {
+            SizeF title = g.MeasureString(_bold, "SANDERLING");
+            float textTop = (b.Height - title.Height) / 2f;
+            float baseline = textTop + _bold.Baseline;
+
+            DrawBird(g, 0f, baseline - BirdFeet);
+
+            float x = BirdWidth + TextGap;
+            g.DrawText(_bold, InkTheme.Ink, x, textTop, "SANDERLING");
+            x += title.Width + TextGap;
+            // Same baseline for the lighter name (both fonts have the same size, so the same baseline offset)
+            g.DrawText(_regular, InkTheme.Muted, x, baseline - _regular.Baseline, _name);
+        }
+
+        private static void DrawBird(Graphics g, float x, float y)
+        {
             g.SaveTransform();
-            g.TranslateTransform(0f, -1.3f);
+            g.TranslateTransform(x, y);
 
             Pen pen = new Pen(InkTheme.Ink, 1.1f);
             pen.LineCap = PenLineCap.Round;

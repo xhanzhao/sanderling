@@ -118,8 +118,7 @@ namespace Sanderling.UI
 
         private Control BuildHeader()
         {
-            Label title = new Label { Text = "SANDERLING", TextColor = InkTheme.Ink, Font = InkTheme.Body(10.5f, FontStyle.Bold), VerticalAlignment = VerticalAlignment.Center };
-            Label subtitle = new Label { Text = _name, TextColor = InkTheme.Muted, Font = InkTheme.Body(10.5f), VerticalAlignment = VerticalAlignment.Center };
+            InkTitle title = new InkTitle(_name);
             InkButton close = new InkButton("✕", InkButtonStyle.Link);
             close.Click += (sender, e) => Close();
 
@@ -127,11 +126,11 @@ namespace Sanderling.UI
             {
                 Padding = new Padding(Side, 14, Side - 4, 6),
                 Spacing = new Size(8, 0),
-                Rows = { new TableRow(new BirdMark(), title, subtitle, null, close) }
+                Rows = { new TableRow(title, null, close) }
             };
 
             // The header moves the window (there is no system title bar)
-            foreach (Control c in new Control[] { header, title, subtitle })
+            foreach (Control c in new Control[] { header, title })
             {
                 c.MouseDown += (sender, e) =>
                 {
