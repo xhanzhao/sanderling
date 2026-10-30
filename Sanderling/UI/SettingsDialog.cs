@@ -98,6 +98,14 @@ namespace Sanderling.UI
         /// <summary>Shows the dialog centered over the owner window.</summary>
         public void ShowCentered(Window owner)
         {
+            // Without a system frame, Windows sizes the window a few pixels too small for its content and cuts off
+            // the bottom edge. Size the client area to the content explicitly instead.
+            LoadComplete += (sender, e) =>
+            {
+                SizeF size = Content.GetPreferredSize(SizeF.PositiveInfinity);
+                ClientSize = new Size((int)Math.Ceiling(size.Width), (int)Math.Ceiling(size.Height));
+            };
+
             if (owner != null)
             {
                 LoadComplete += (sender, e) =>
