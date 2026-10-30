@@ -492,15 +492,18 @@ namespace Sanderling.UI
         {
             SizeF title = g.MeasureString(_bold, "SANDERLING");
             float textTop = (b.Height - title.Height) / 2f;
-            float baseline = textTop + _bold.Baseline;
+            // Font metrics are not in the same units on every platform (points on one, pixels on another), but their
+            // ratio is: baseline = measured line height x (baseline / line height)
+            float ratio = _bold.LineHeight > 0f ? _bold.Baseline / _bold.LineHeight : 0.8f;
+            float baseline = textTop + title.Height * ratio;
 
             DrawBird(g, 0f, baseline - BirdFeet);
 
             float x = BirdWidth + TextGap;
             g.DrawText(_bold, InkTheme.Ink, x, textTop, "SANDERLING");
             x += title.Width + TextGap;
-            // Same baseline for the lighter name (both fonts have the same size, so the same baseline offset)
-            g.DrawText(_regular, InkTheme.Muted, x, baseline - _regular.Baseline, _name);
+            // Same size and family as the title, so drawing from the same top gives the same baseline
+            g.DrawText(_regular, InkTheme.Muted, x, textTop, _name);
         }
 
         private static void DrawBird(Graphics g, float x, float y)
