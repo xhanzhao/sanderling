@@ -53,7 +53,14 @@ namespace Sanderling.UI
             };
 
             InkTabBar tabs = new InkTabBar("General", "Movement", "Walk", "Objects");
-            tabs.SelectedIndexChanged += (sender, e) => _page.Content = _pages[tabs.SelectedIndex];
+            tabs.SelectedIndexChanged += (sender, e) =>
+            {
+                _page.Content = _pages[tabs.SelectedIndex];
+                tabs.Focus(); // keep the keyboard focus off the number boxes of the new page
+            };
+            // Open with the focus on the tab strip, not in the first number box
+            tabs.CanFocus = true;
+            Shown += (sender, e) => tabs.Focus();
             _page.Content = _pages[0];
             _page.Height = PageHeight;
             _page.BackgroundColor = InkTheme.Paper;
@@ -295,12 +302,7 @@ namespace Sanderling.UI
                 BackgroundColor = InkTheme.Paper,
                 Width = 54
             };
-            Panel boxFrame = new Panel
-            {
-                Padding = new Padding(1),
-                BackgroundColor = InkTheme.Ink,
-                Content = new Panel { Padding = new Padding(4, 3), BackgroundColor = InkTheme.Paper, Content = box }
-            };
+            InkBox boxFrame = new InkBox(box);
 
             Func<double, double> round = v => Math.Round(Math.Max(min, Math.Min(max, v)), decimals);
             Func<double, string> format = v => v.ToString("F" + decimals, CultureInfo.InvariantCulture);

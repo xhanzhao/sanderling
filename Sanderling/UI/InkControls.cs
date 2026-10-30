@@ -38,6 +38,46 @@ namespace Sanderling.UI
         }
     }
 
+    /// <summary>Pixel-snapped frame drawing shared by the ink controls.</summary>
+    internal static class InkFrame
+    {
+        public static void Draw(Graphics g, Color color, RectangleF r, float scale)
+        {
+            bool antiAlias = g.AntiAlias;
+            g.AntiAlias = false;
+            float px = 1f / scale; // one device pixel in logical units
+            float left = Snap(r.Left, scale), top = Snap(r.Top, scale);
+            float right = Snap(r.Right, scale) - px, bottom = Snap(r.Bottom, scale) - px;
+            g.FillRectangle(color, left, top, right - left + px, px);      // top
+            g.FillRectangle(color, left, bottom, right - left + px, px);   // bottom
+            g.FillRectangle(color, left, top, px, bottom - top + px);      // left
+            g.FillRectangle(color, right, top, px, bottom - top + px);     // right
+            g.AntiAlias = antiAlias;
+        }
+
+        private static float Snap(float v, float scale)
+        {
+            return (float)Math.Round(v * scale) / scale;
+        }
+    }
+
+    /// <summary>White box with a 1 pixel ink frame that hosts another control (the number text boxes).</summary>
+    internal sealed class InkBox : Drawable
+    {
+        public InkBox(Control content)
+        {
+            BackgroundColor = InkTheme.Paper;
+            Padding = new Padding(5, 4);
+            Content = content;
+            Paint += (sender, e) =>
+            {
+                Window window = ParentWindow;
+                float scale = window != null && window.Screen != null ? window.Screen.LogicalPixelSize : 1f;
+                InkFrame.Draw(e.Graphics, InkTheme.Ink, new RectangleF(0, 0, Width, Height), scale > 0f ? scale : 1f);
+            };
+        }
+    }
+
     /// <summary>Base class of the custom drawn controls: anti-aliased painting and a hover flag.</summary>
     internal abstract class InkDrawable : Drawable
     {
@@ -56,6 +96,27 @@ namespace Sanderling.UI
         }
 
         protected abstract void Draw(Graphics g, RectangleF bounds);
+
+        /// <summary>Logical pixel size of the screen the control is on (1.25 at 125 % display scaling).</summary>
+        protected float PixelScale
+        {
+            get
+            {
+                Window window = ParentWindow;
+                Screen screen = window != null ? window.Screen : null;
+                float scale = screen != null ? screen.LogicalPixelSize : 1f;
+                return scale > 0f ? scale : 1f;
+            }
+        }
+
+        /// <summary>
+        /// Draws a 1 device pixel frame just inside the rectangle, snapped to the pixel grid and without
+        /// anti-aliasing, so all four sides are equally thick at any display scaling.
+        /// </summary>
+        protected void DrawFrame(Graphics g, Color color, RectangleF r)
+        {
+            InkFrame.Draw(g, color, r, PixelScale);
+        }
 
         protected static void DrawCentered(Graphics g, Font font, Color color, RectangleF box, string text)
         {
@@ -159,7 +220,7 @@ namespace Sanderling.UI
         }
     }
 
-    /// <summary>On / off switch: ink pill with a white knob when on, outlined pill with an ink knob when off.</summary>
+    /// <summary>On / off switch, square: filled with ink and a white knob on the right when on, outlined with an ink knob on the left when off.</summary>
     internal sealed class InkToggle : InkDrawable
     {
         private bool _checked;
@@ -192,20 +253,18 @@ namespace Sanderling.UI
 
         protected override void Draw(Graphics g, RectangleF b)
         {
-            RectangleF pill = new RectangleF(1f, 1f, b.Width - 2f, b.Height - 2f);
-            IGraphicsPath shape = GraphicsPath.GetRoundRect(pill, pill.Height / 2f);
-            float knob = pill.Height - 6f;
-
+            g.AntiAlias = false;
+            float knob = b.Height - 6f;
             if (_checked)
             {
-                g.FillPath(Hover ? InkTheme.InkHover : InkTheme.Ink, shape);
-                g.FillEllipse(InkTheme.Paper, pill.Right - knob - 3f, pill.Y + 3f, knob, knob);
+                g.FillRectangle(Hover ? InkTheme.InkHover : InkTheme.Ink, b);
+                g.FillRectangle(InkTheme.Paper, b.Right - knob - 3f, 3f, knob, knob);
             }
             else
             {
-                g.FillPath(Hover ? InkTheme.PaperHover : InkTheme.Paper, shape);
-                g.DrawPath(new Pen(InkTheme.Ink, 1.5f), shape);
-                g.FillEllipse(InkTheme.Ink, pill.X + 3f, pill.Y + 3f, knob, knob);
+                g.FillRectangle(Hover ? InkTheme.PaperHover : InkTheme.Paper, b);
+                DrawFrame(g, InkTheme.Ink, b);
+                g.FillRectangle(InkTheme.Ink, 3f, 3f, knob, knob);
             }
         }
     }
@@ -259,7 +318,7 @@ namespace Sanderling.UI
                 if (selected) g.FillRectangle(InkTheme.Ink, cell);
                 DrawCentered(g, _font, selected ? InkTheme.Paper : InkTheme.Ink, cell, _options[i]);
             }
-            g.DrawRectangle(new Pen(InkTheme.Ink, 1f), 0.5f, 0.5f, b.Width - 1f, b.Height - 1f);
+            DrawFrame(g, InkTheme.Ink, b);
         }
     }
 
@@ -305,7 +364,7 @@ namespace Sanderling.UI
                     break;
                 case InkButtonStyle.Outline:
                     if (Hover) g.FillRectangle(InkTheme.PaperHover, b);
-                    g.DrawRectangle(new Pen(InkTheme.Ink, 1f), 0.5f, 0.5f, b.Width - 1f, b.Height - 1f);
+                    DrawFrame(g, InkTheme.Ink, b);
                     DrawCentered(g, _font, InkTheme.Ink, b, _text);
                     break;
                 default:
