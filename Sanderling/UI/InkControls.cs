@@ -76,7 +76,16 @@ namespace Sanderling.UI
             {
                 Window window = ParentWindow;
                 float scale = window != null && window.Screen != null ? window.Screen.LogicalPixelSize : 1f;
-                InkFrame.Draw(e.Graphics, InkTheme.Ink, new RectangleF(0, 0, Width, Height), scale > 0f ? scale : 1f);
+                // Use the painted area when it is smaller than Width / Height: at fractional display scaling the
+                // rounded control size can be a pixel larger than what is shown, which would hide the bottom edge
+                RectangleF clip = e.ClipRectangle;
+                RectangleF area = new RectangleF(0, 0, Width, Height);
+                if (clip.Width > 1f && clip.Height > 1f)
+                {
+                    area.Width = Math.Min(area.Width, clip.Right);
+                    area.Height = Math.Min(area.Height, clip.Bottom);
+                }
+                InkFrame.Draw(e.Graphics, InkTheme.Ink, area, scale > 0f ? scale : 1f);
             };
         }
     }

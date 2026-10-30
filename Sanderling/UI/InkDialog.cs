@@ -64,15 +64,15 @@ namespace Sanderling.UI
             {
                 Padding = new Padding(Side, 14, Side, 16),
                 Spacing = new Size(10, 0),
-                BackgroundColor = InkTheme.Paper,
                 Rows = { new TableRow(footerLeft, null, cancel, save) }
             };
 
-            // The 1 pixel frame is drawn snapped to the pixel grid, so all four sides are equally thick
+            // The 1 pixel frame is drawn snapped to the pixel grid, so all four sides are equally thick.
+            // The header, body and footer containers have no background of their own: one that reaches the edge
+            // of the window could otherwise paint over the frame, which is drawn underneath them.
             Content = new InkBox(
                 new TableLayout
                 {
-                    BackgroundColor = InkTheme.Paper,
                     Width = width,
                     Rows =
                     {
@@ -127,7 +127,6 @@ namespace Sanderling.UI
             {
                 Padding = new Padding(Side, 14, Side - 4, 6),
                 Spacing = new Size(8, 0),
-                BackgroundColor = InkTheme.Paper,
                 Rows = { new TableRow(new BirdMark(), title, subtitle, null, close) }
             };
 
