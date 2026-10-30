@@ -19,7 +19,7 @@
 
   <PropertyGroup>
     <!-- Assembly / Yak package information -->
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Title>Sanderling</Title>
     <Product>Sanderling</Product>
     <Company></Company>
